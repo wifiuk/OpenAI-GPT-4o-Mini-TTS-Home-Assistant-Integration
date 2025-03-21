@@ -39,7 +39,7 @@ Since this is a **custom repository**, you must add it manually:
 
 1. Open **HACS** in Home Assistant.  
 2. Go to **Integrations** → Click the **three-dot menu** → **Custom repositories**.  
-3. Add this repository:  [https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration/](https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration.git)
+3. Add this repository:  [https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration.git](https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration.git)
 
 
 4. Select **Integration** as the category and click **Add**.  
