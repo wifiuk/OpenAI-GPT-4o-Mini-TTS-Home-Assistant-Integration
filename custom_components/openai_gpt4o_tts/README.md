@@ -102,8 +102,6 @@ You need an API key from OpenAI to use this integration. Get one from:
 ### **What are the available voices?**  
 The integration supports the following **11 voices**:  alloy, ash, ballad, coral, echo, fable, onyx, nova, sage, shimmer
 
-### **Does this support real-time streaming?**  
-No, **OpenAI’s TTS API does not currently provide real-time streaming**. However, Home Assistant **caches** responses to improve performance for repeated messages.  
 
 ### **Is this free to use?**  
 No, **OpenAI’s API is a paid service**. You are charged per character generated. Check OpenAI’s pricing page for more details.  
@@ -112,9 +110,7 @@ No, **OpenAI’s API is a paid service**. You are charged per character generate
 
 ## 🔄 Future Plans  
 
-✔️ **HACS Default Repository Submission** (Planned)  
 ✔️ **Additional language support (as OpenAI adds more)**  
-✔️ **Voice previews in the UI**  
 
 ---
 
