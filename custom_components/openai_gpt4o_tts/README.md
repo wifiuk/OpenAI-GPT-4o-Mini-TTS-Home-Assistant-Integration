@@ -72,6 +72,9 @@ Since this is a **custom repository**, you must add it manually:
 - **Emotion** (e.g., "Warm and supportive")  
 6. Click **Submit**. 🎉 Done!  
 
+![image](https://github.com/user-attachments/assets/a533cb82-8b6e-4689-8d0f-c6df0b83dc3c)
+
+
 Now, Home Assistant's voice assistant will use GPT-4o Mini TTS as its **speech provider**.
 
 ---
@@ -86,8 +89,10 @@ Once the repo is installed, follow these steps:
 2. **Choose your assistant** (e.g., Assist).  
 3. Scroll down to **Text-to-Speech** settings.  
 4. **Select "OpenAI GPT-4o Mini TTS" from the dropdown**.  
-5. **Choose the same voice you setup earlier**  
+5. **Choose the same voice you setup earlier**    
 6. **Save settings** and test voice output.
+
+![image](https://github.com/user-attachments/assets/6f61f299-1c51-4109-ab5b-f7b1a1e6f658)
 
 👉 **See Home Assistant’s [Voice Control Guide](https://www.home-assistant.io/voice_control/) for setup.**  
 
@@ -110,7 +115,7 @@ No, **OpenAI’s API is a paid service**. You are charged per character generate
 
 ## 🔄 Future Plans  
 
-✔️ **Additional language support (as OpenAI adds more)**  
+✔️ **Additional voices (as OpenAI adds more)**  
 
 ---
 
