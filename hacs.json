@@ -1,0 +1,8 @@
+{
+    "name": "OpenAI GPT-4o Mini TTS",
+    "domain": "openai_gpt4o_tts",
+    "homeassistant": "2024.2.0",
+    "render_readme": true,
+    "zip_release": false
+  }
+  
