@@ -116,7 +116,7 @@ No, **OpenAI’s API is a paid service**. You are charged per character generate
 ## 🔄 Future Plans  
 
 ✔️ **Additional voices (as OpenAI adds more)**  
-
+✔️ **Figure out how to stream the replies quickly, rather than waiting for the entire file to download and play** 
 ---
 
 ## 🤝 Contributing  
