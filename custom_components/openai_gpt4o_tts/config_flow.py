@@ -6,6 +6,8 @@ from homeassistant.core import callback
 
 from .const import (
     DOMAIN,
+    CONF_VOICE,
+    CONF_INSTRUCTIONS,
     DEFAULT_VOICE,
     DEFAULT_AFFECT,
     DEFAULT_TONE,
@@ -18,9 +20,12 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 class OpenAITTSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle OpenAI GPT-4o Mini TTS setup flow."""
+    
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
+        """Initial configuration step."""
         errors = {}
 
         if user_input is not None:
@@ -44,7 +49,7 @@ class OpenAITTSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 instructions_parts.append(f"Emotion: {emotion}")
 
             combined_instructions = "\n".join(instructions_parts)
-            user_input["instructions"] = combined_instructions
+            user_input[CONF_INSTRUCTIONS] = combined_instructions
 
             _LOGGER.debug(
                 "Creating config entry with combined instructions:\n%s",
@@ -53,17 +58,15 @@ class OpenAITTSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             return self.async_create_entry(title="OpenAI GPT-4o Mini TTS", data=user_input)
 
-        # Show the form for the first time
+        # Show the setup form
         data_schema = vol.Schema({
             vol.Required(CONF_API_KEY): str,
-            vol.Optional("voice", default=DEFAULT_VOICE): vol.In(OPENAI_TTS_VOICES),
-
-            # Each “instructions” field has its own default
-            vol.Optional("affect_personality", default=DEFAULT_AFFECT): str,
-            vol.Optional("tone", default=DEFAULT_TONE): str,
-            vol.Optional("pronunciation", default=DEFAULT_PRONUNCIATION): str,
-            vol.Optional("pause", default=DEFAULT_PAUSE): str,
-            vol.Optional("emotion", default=DEFAULT_EMOTION): str,
+            vol.Optional(CONF_VOICE, default=DEFAULT_VOICE): vol.In(OPENAI_TTS_VOICES),
+            vol.Optional("affect_personality", default=DEFAULT_AFFECT): vol.All(str, vol.Length(min=5, max=500)),
+            vol.Optional("tone", default=DEFAULT_TONE): vol.All(str, vol.Length(min=5, max=500)),
+            vol.Optional("pronunciation", default=DEFAULT_PRONUNCIATION): vol.All(str, vol.Length(min=5, max=500)),
+            vol.Optional("pause", default=DEFAULT_PAUSE): vol.All(str, vol.Length(min=5, max=500)),
+            vol.Optional("emotion", default=DEFAULT_EMOTION): vol.All(str, vol.Length(min=5, max=500)),
         })
 
         return self.async_show_form(
@@ -79,14 +82,28 @@ class OpenAITTSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class OpenAITTSOptionsFlowHandler(config_entries.OptionsFlow):
-    """Optional flow to edit instructions after initial setup."""
+    """Handle editing OpenAI GPT-4o Mini TTS settings."""
 
     def __init__(self, config_entry):
+        """Initialize the options flow."""
         self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
+        """Show the options form with pre-filled values."""
         if user_input is not None:
-            # Could re-build instructions if you want to let them edit each field
             return self.async_create_entry(title="", data=user_input)
 
-        return self.async_show_form(step_id="init", data_schema=vol.Schema({}))
+        # Retrieve existing settings from config entry
+        existing_settings = self.config_entry.options or self.config_entry.data
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema({
+                vol.Optional(CONF_VOICE, default=existing_settings.get(CONF_VOICE, DEFAULT_VOICE)): vol.In(OPENAI_TTS_VOICES),
+                vol.Optional("affect_personality", default=existing_settings.get("affect_personality", DEFAULT_AFFECT)): vol.All(str, vol.Length(min=5, max=500)),
+                vol.Optional("tone", default=existing_settings.get("tone", DEFAULT_TONE)): vol.All(str, vol.Length(min=5, max=500)),
+                vol.Optional("pronunciation", default=existing_settings.get("pronunciation", DEFAULT_PRONUNCIATION)): vol.All(str, vol.Length(min=5, max=500)),
+                vol.Optional("pause", default=existing_settings.get("pause", DEFAULT_PAUSE)): vol.All(str, vol.Length(min=5, max=500)),
+                vol.Optional("emotion", default=existing_settings.get("emotion", DEFAULT_EMOTION)): vol.All(str, vol.Length(min=5, max=500)),
+            })
+        )
