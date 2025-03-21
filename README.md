@@ -86,7 +86,7 @@ Once the repo is installed, follow these steps:
 2. **Choose your assistant** (e.g., Assist).  
 3. Scroll down to **Text-to-Speech** settings.  
 4. **Select "OpenAI GPT-4o Mini TTS" from the dropdown**.  
-5. **Choose a voice** (e.g., `nova`, `onyx`, `sage`).  
+5. **Choose the same voice you setup earlier**    
 6. **Save settings** and test voice output.
 
 👉 **See Home Assistant’s [Voice Control Guide](https://www.home-assistant.io/voice_control/) for setup.**  
