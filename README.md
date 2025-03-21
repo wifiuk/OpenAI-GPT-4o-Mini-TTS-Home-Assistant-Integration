@@ -26,7 +26,7 @@ With **11 built-in voices**, you can customise **how speech is rendered** to mat
 ✅ **Fully UI-based setup**—no YAML required  
 ✅ **11 voices** (`alloy`, `ash`, `ballad`, `coral`, `echo`, etc.)  
 ✅ **Customisable speech**—affect, tone, pronunciation, pauses, emotion  
-✅ **Works with Home Assistant’s Assist, Piper, and Whisper**  
+✅ **Works with Home Assistant’s Assist**  
 ✅ **Easily installable via HACS**  
 
 ---
@@ -39,9 +39,8 @@ Since this is a **custom repository**, you must add it manually:
 
 1. Open **HACS** in Home Assistant.  
 2. Go to **Integrations** → Click the **three-dot menu** → **Custom repositories**.  
-3. Add this repository:  [https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration.git](https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration.git)
-
-
+3. Add this repository:  
+   [https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration.git](https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration.git)
 4. Select **Integration** as the category and click **Add**.  
 5. Click **Download** and install **OpenAI GPT-4o Mini TTS**.  
 6. **Restart Home Assistant** after installation.  
@@ -52,6 +51,7 @@ Since this is a **custom repository**, you must add it manually:
 
 1. Download this repository as a **ZIP file** and extract it.  
 2. Copy the `openai_gpt4o_tts` folder to:  /config/custom_components/
+
 3. Restart Home Assistant.  
 4. Go to **Settings → Devices & Services → Add Integration**.  
 5. Search for **OpenAI GPT-4o Mini TTS** and follow the setup process.  
@@ -78,11 +78,16 @@ Now, Home Assistant's voice assistant will use GPT-4o Mini TTS as its **speech p
 
 ## 🔊 Using GPT-4o TTS in Home Assistant  
 
-### 🔹 **Voice Assistants (Main Use Case)**  
+### 🔹 **Enable GPT-4o Mini TTS in Home Assistant Voice Assistants**  
 
-This TTS engine is built for **Home Assistant’s voice assistant platform**. You can configure it as a **speech provider** in:  
+Once the repo is installed, follow these steps:  
 
-- **Assist (HA’s built-in assistant)**  
+1. **Go to:** `Settings → Voice Assistants`.  
+2. **Choose your assistant** (e.g., Assist).  
+3. Scroll down to **Text-to-Speech** settings.  
+4. **Select "OpenAI GPT-4o Mini TTS" from the dropdown**.  
+5. **Choose a voice** (e.g., `nova`, `onyx`, `sage`).  
+6. **Save settings** and test voice output.
 
 👉 **See Home Assistant’s [Voice Control Guide](https://www.home-assistant.io/voice_control/) for setup.**  
 
@@ -95,6 +100,41 @@ You need an API key from OpenAI to use this integration. Get one from:
 👉 [https://platform.openai.com/signup/](https://platform.openai.com/signup/)  
 
 ### **What are the available voices?**  
-The integration supports the following **11 voices**:  
+The integration supports the following **11 voices**:  alloy, ash, ballad, coral, echo, fable, onyx, nova, sage, shimmer
+
+### **Does this support real-time streaming?**  
+No, **OpenAI’s TTS API does not currently provide real-time streaming**. However, Home Assistant **caches** responses to improve performance for repeated messages.  
+
+### **Is this free to use?**  
+No, **OpenAI’s API is a paid service**. You are charged per character generated. Check OpenAI’s pricing page for more details.  
+
+---
+
+## 🔄 Future Plans  
+
+✔️ **HACS Default Repository Submission** (Planned)  
+✔️ **Additional language support (as OpenAI adds more)**  
+✔️ **Voice previews in the UI**  
+
+---
+
+## 🤝 Contributing  
+
+Want to help improve this project? Contributions are welcome!  
+
+1. Fork the repo  
+2. Submit pull requests for features/fixes  
+3. Report issues or suggest improvements  
+
+---
+
+## 📢 Support  
+
+Have questions or need help?  
+- **GitHub Issues:** Report problems [here](https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration/issues)  
+- **Home Assistant Forums:** Share feedback [here](https://community.home-assistant.io)  
+
+Enjoy **human-like, expressive TTS** in Home Assistant! 🎤🔊  
+
 
 
