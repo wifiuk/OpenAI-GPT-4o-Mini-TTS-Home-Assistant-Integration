@@ -1,7 +1,8 @@
 {
     "domain": "openai_gpt4o_tts",
     "name": "OpenAI GPT-4o Mini TTS",
-    "version": "1.0.0",
+    "version": "1.0.3", 
+    "author": "wifiuk",
     "documentation": "https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration",
     "requirements": [
       "requests>=2.31.0"
