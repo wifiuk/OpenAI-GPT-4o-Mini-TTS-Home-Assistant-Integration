@@ -7,35 +7,31 @@ PLATFORMS = ["tts"]
 CONF_API_KEY = "api_key"
 CONF_VOICE = "voice"
 CONF_INSTRUCTIONS = "instructions"
+CONF_LANGUAGE = "language"
 
-# Default voice setting
+# Default settings
 DEFAULT_VOICE = "sage"
+DEFAULT_LANGUAGE = "en"
 
 # Default multi-field instruction settings
 DEFAULT_AFFECT = (
     "A cheerful guide who delivers speech in a lively and engaging manner, "
-    "keeping the listener's attention while providing clear guidance."
+    "tailoring pronunciation clearly for the listener."
 )
 DEFAULT_TONE = (
-    "Friendly, clear, and reassuring, creating a calm atmosphere and making the listener "
-    "feel confident and comfortable. Encourages attentiveness without being overly formal."
+    "A conversational, friendly tone suitable for general-purpose speech."
 )
 DEFAULT_PRONUNCIATION = (
-    "Clear, articulate, and steady, ensuring each instruction is easily understood "
-    "while maintaining a natural, conversational flow. Uses proper enunciation "
-    "to minimize misunderstandings."
+    "Use standard pronunciation for the language of the message."
 )
 DEFAULT_PAUSE = (
-    "Brief, purposeful pauses after key instructions (e.g., 'cross the street' and 'turn right') "
-    "to allow time for the listener to process the information and follow along. "
-    "Ensures clarity without unnecessary delays."
+    "Insert brief, natural pauses between sentences."
 )
 DEFAULT_EMOTION = (
-    "Warm and supportive, conveying empathy and care, ensuring the listener feels guided "
-    "and safe throughout the journey. Uses subtle emotional cues to enhance engagement."
+    "Subtly expressive; match the content’s sentiment without over‑acting."
 )
 
-# Official GPT-4o TTS voices
+# Official GPT‑4o TTS voices
 OPENAI_TTS_VOICES = [
     "alloy",
     "ash",
@@ -46,7 +42,7 @@ OPENAI_TTS_VOICES = [
     "onyx",
     "nova",
     "sage",
-    "shimmer"
+    "shimmer",
 ]
 
 # Full Whisper‑level language support (ISO‑639‑1 codes)

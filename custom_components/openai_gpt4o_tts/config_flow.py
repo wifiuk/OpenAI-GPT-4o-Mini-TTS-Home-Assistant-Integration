@@ -32,10 +32,7 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         """Initial step for user setup."""
         if user_input is not None:
-            # Create entry with data and default options
-            data = {
-                CONF_API_KEY: user_input[CONF_API_KEY],
-            }
+            data = {CONF_API_KEY: user_input[CONF_API_KEY]}
             options = {
                 CONF_VOICE: user_input.get(CONF_VOICE, DEFAULT_VOICE),
                 CONF_LANGUAGE: user_input.get(CONF_LANGUAGE, DEFAULT_LANGUAGE),
@@ -46,9 +43,10 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "pause": user_input.get("pause"),
                 "emotion": user_input.get("emotion"),
             }
-            return self.async_create_entry(title="OpenAI GPT‑4o TTS", data=data, options=options)
+            return self.async_create_entry(
+                title="OpenAI GPT‑4o TTS", data=data, options=options
+            )
 
-        # Retrieve existing settings if re‑configuring
         existing = self.config_entry.options if self.config_entry else {}
         defaults = {
             CONF_VOICE: existing.get(CONF_VOICE, DEFAULT_VOICE),
@@ -74,7 +72,6 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         })
 
         return self.async_show_form(step_id="user", data_schema=schema)
-
 
     @staticmethod
     @callback
