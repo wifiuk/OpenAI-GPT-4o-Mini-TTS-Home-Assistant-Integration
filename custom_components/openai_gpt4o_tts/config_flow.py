@@ -100,15 +100,16 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class OpenAIGPT4oOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle editing existing TTS settings."""
 
-    def __init__(self, config_entry):
-        self.config_entry = config_entry
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Store config entry without using deprecated property."""
+        self._entry = config_entry
 
     async def async_step_init(self, user_input=None):
         """Show the options form with pre‑filled values."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        existing = self.config_entry.options or self.config_entry.data
+        existing = self._entry.options or self._entry.data
         data_schema = vol.Schema({
             vol.Optional(CONF_VOICE, default=existing.get(CONF_VOICE, DEFAULT_VOICE)): vol.In(OPENAI_TTS_VOICES),
             vol.Optional(CONF_LANGUAGE, default=existing.get(CONF_LANGUAGE, DEFAULT_LANGUAGE)): vol.In(SUPPORTED_LANGUAGES),
