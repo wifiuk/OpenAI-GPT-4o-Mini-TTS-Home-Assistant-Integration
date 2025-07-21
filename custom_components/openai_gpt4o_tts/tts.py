@@ -84,3 +84,4 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
     def extra_state_attributes(self) -> dict:
         """Optional: expose provider name or debug info."""
         return {"provider": self._name}
+
