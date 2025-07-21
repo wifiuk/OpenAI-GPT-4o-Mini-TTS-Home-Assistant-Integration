@@ -8,10 +8,12 @@ CONF_API_KEY = "api_key"
 CONF_VOICE = "voice"
 CONF_INSTRUCTIONS = "instructions"
 CONF_LANGUAGE = "language"
+CONF_SPEED = "speed"
 
 # Default settings
 DEFAULT_VOICE = "sage"
 DEFAULT_LANGUAGE = "en"
+DEFAULT_SPEED = 1.0
 
 # Default multi-field instruction settings
 DEFAULT_AFFECT = (

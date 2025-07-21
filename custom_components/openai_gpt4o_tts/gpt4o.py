@@ -1,7 +1,12 @@
 import logging
 import requests
 
-from .const import CONF_VOICE, CONF_INSTRUCTIONS
+from .const import (
+    CONF_VOICE,
+    CONF_INSTRUCTIONS,
+    CONF_SPEED,
+    DEFAULT_SPEED,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,6 +38,9 @@ class GPT4oClient:
         voice = options.get("voice", self._voice)
         instructions = options.get("instructions", self._instructions)
         audio_format = options.get("audio_output", "mp3")
+        speed = float(options.get(CONF_SPEED, DEFAULT_SPEED))
+        # Ensure the API's allowed range 0.25-4.0
+        speed = max(0.25, min(4.0, speed))
 
         headers = {
             "Authorization": f"Bearer {self._api_key}",
@@ -44,6 +52,7 @@ class GPT4oClient:
             "input": text,
             "instructions": instructions,
             "response_format": audio_format,
+            "speed": speed,
         }
 
         def do_request():

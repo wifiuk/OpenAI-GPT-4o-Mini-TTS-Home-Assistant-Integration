@@ -79,9 +79,9 @@ Now, Home Assistant's voice assistant will use GPT-4o Mini TTS as its **speech p
 
 ---
 
-## 🔊 Using GPT-4o TTS in Home Assistant  
+## 🔊 Using GPT-4o TTS in Home Assistant
 
-### 🔹 **Enable GPT-4o Mini TTS in Home Assistant Voice Assistants**  
+### 🔹 **Enable GPT-4o Mini TTS in Home Assistant Voice Assistants**
 
 Once the repo is installed, follow these steps:  
 
@@ -94,7 +94,25 @@ Once the repo is installed, follow these steps:
 
 ![image](https://github.com/user-attachments/assets/6f61f299-1c51-4109-ab5b-f7b1a1e6f658)
 
-👉 **See Home Assistant’s [Voice Control Guide](https://www.home-assistant.io/voice_control/) for setup.**  
+    👉 **See Home Assistant’s [Voice Control Guide](https://www.home-assistant.io/voice_control/) for setup.**
+
+### ⏩ **Streaming & Playback Speed**
+
+This component streams audio from OpenAI. Playback starts once the full audio is
+downloaded because Home Assistant currently lacks progressive playback support.
+You can control the speaking speed via the `speed` option (range
+**0.25–4.0**, default **1.0**):
+
+```yaml
+service: tts.openai_gpt4o_tts_say
+data:
+  entity_id: media_player.living_room
+  message: "Hello there"
+  speed: 1.25
+```
+
+> **Requires Home Assistant 2024.5 or newer** for the `speed` option to take
+> effect.
 
 ---
 
