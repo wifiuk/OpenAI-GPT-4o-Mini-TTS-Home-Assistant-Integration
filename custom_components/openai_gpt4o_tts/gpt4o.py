@@ -1,5 +1,6 @@
 import logging
 from typing import AsyncGenerator
+from requests import RequestException, Timeout, post
 
 import aiohttp
 import requests
@@ -9,6 +10,9 @@ from .const import CONF_VOICE, CONF_INSTRUCTIONS
 API_URL = "https://api.openai.com/v1/audio/speech"
 
 _LOGGER = logging.getLogger(__name__)
+
+# Request timeout for the OpenAI API in seconds
+REQUEST_TIMEOUT = 30
 
 
 class GPT4oClient:
@@ -92,6 +96,7 @@ class GPT4oClient:
                 headers=headers,
                 json=payload,
                 stream=True,
+                timeout=REQUEST_TIMEOUT,
             )
             resp.raise_for_status()
 
@@ -104,6 +109,14 @@ class GPT4oClient:
 
         try:
             return await self.hass.async_add_executor_job(do_request)
-        except Exception as e:
-            _LOGGER.error("Error generating GPT-4o TTS audio: %s", e)
+        except Timeout:
+            _LOGGER.error(
+                "GPT-4o TTS request timed out after %s seconds", REQUEST_TIMEOUT
+            )
+            return None, None
+        except RequestException as err:
+            _LOGGER.error("Error generating GPT-4o TTS audio: %s", err)
+            return None, None
+        except Exception as err:  # pragma: no cover - unexpected errors
+            _LOGGER.error("Unexpected error generating GPT-4o TTS audio: %s", err)
             return None, None
