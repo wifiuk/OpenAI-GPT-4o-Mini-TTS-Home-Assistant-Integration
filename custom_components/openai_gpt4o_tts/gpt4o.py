@@ -1,7 +1,7 @@
 import logging
 import requests
 
-from .const import CONF_VOICE, CONF_INSTRUCTIONS
+from .const import CONF_VOICE, CONF_INSTRUCTIONS, CONF_SPEED, DEFAULT_SPEED
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,10 +16,11 @@ class GPT4oClient:
         # Always set your API key
         self._api_key = entry.data["api_key"]
 
-        # Pull default voice/instructions from options first, then legacy data
+        # Pull defaults from options first, then fallback to legacy data
         opts = getattr(entry, "options", {}) or {}
         self._voice = opts.get(CONF_VOICE, entry.data.get(CONF_VOICE))
         self._instructions = opts.get(CONF_INSTRUCTIONS, entry.data.get(CONF_INSTRUCTIONS))
+        self._speed = opts.get(CONF_SPEED, entry.data.get(CONF_SPEED, DEFAULT_SPEED))
 
         # Model name stays the same
         self._model = "gpt-4o-mini-tts"
@@ -32,6 +33,7 @@ class GPT4oClient:
         # Allow per‑call overrides, else use our stored defaults
         voice = options.get("voice", self._voice)
         instructions = options.get("instructions", self._instructions)
+        speed = float(options.get("speed", self._speed))
         audio_format = options.get("audio_output", "mp3")
 
         headers = {
@@ -44,6 +46,7 @@ class GPT4oClient:
             "input": text,
             "instructions": instructions,
             "response_format": audio_format,
+            "speed": speed,
         }
 
         def do_request():

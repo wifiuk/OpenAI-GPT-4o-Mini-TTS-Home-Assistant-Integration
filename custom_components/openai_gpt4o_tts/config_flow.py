@@ -12,6 +12,8 @@ from .const import (
     CONF_LANGUAGE,
     DEFAULT_VOICE,
     DEFAULT_LANGUAGE,
+    CONF_SPEED,
+    DEFAULT_SPEED,
     DEFAULT_AFFECT,
     DEFAULT_TONE,
     DEFAULT_PRONUNCIATION,
@@ -61,6 +63,7 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             options = {
                 CONF_VOICE: user_input.get(CONF_VOICE, DEFAULT_VOICE),
                 CONF_LANGUAGE: user_input.get(CONF_LANGUAGE, DEFAULT_LANGUAGE),
+                CONF_SPEED: user_input.get(CONF_SPEED, DEFAULT_SPEED),
                 CONF_INSTRUCTIONS: user_input.get(CONF_INSTRUCTIONS, ""),
                 "affect_personality": affect,
                 "tone": tone,
@@ -77,6 +80,9 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_API_KEY): str,
             vol.Optional(CONF_VOICE, default=DEFAULT_VOICE): vol.In(OPENAI_TTS_VOICES),
             vol.Optional(CONF_LANGUAGE, default=DEFAULT_LANGUAGE): vol.In(SUPPORTED_LANGUAGES),
+            vol.Optional(CONF_SPEED, default=DEFAULT_SPEED): vol.All(
+                vol.Coerce(float), vol.Range(min=0.25, max=4.0)
+            ),
             vol.Optional("affect_personality", default=DEFAULT_AFFECT): vol.All(str, vol.Length(min=5, max=500)),
             vol.Optional("tone", default=DEFAULT_TONE): vol.All(str, vol.Length(min=5, max=500)),
             vol.Optional("pronunciation", default=DEFAULT_PRONUNCIATION): vol.All(str, vol.Length(min=5, max=500)),
@@ -113,6 +119,9 @@ class OpenAIGPT4oOptionsFlowHandler(config_entries.OptionsFlow):
         data_schema = vol.Schema({
             vol.Optional(CONF_VOICE, default=existing.get(CONF_VOICE, DEFAULT_VOICE)): vol.In(OPENAI_TTS_VOICES),
             vol.Optional(CONF_LANGUAGE, default=existing.get(CONF_LANGUAGE, DEFAULT_LANGUAGE)): vol.In(SUPPORTED_LANGUAGES),
+            vol.Optional(CONF_SPEED, default=existing.get(CONF_SPEED, DEFAULT_SPEED)): vol.All(
+                vol.Coerce(float), vol.Range(min=0.25, max=4.0)
+            ),
             vol.Optional("affect_personality", default=existing.get("affect_personality", DEFAULT_AFFECT)): vol.All(str, vol.Length(min=5, max=500)),
             vol.Optional("tone", default=existing.get("tone", DEFAULT_TONE)): vol.All(str, vol.Length(min=5, max=500)),
             vol.Optional("pronunciation", default=existing.get("pronunciation", DEFAULT_PRONUNCIATION)): vol.All(str, vol.Length(min=5, max=500)),
