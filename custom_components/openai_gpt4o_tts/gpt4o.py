@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from aiohttp import ClientError, ClientSession, ClientTimeout
+from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
 
 from .const import (
     CONF_INSTRUCTIONS,
@@ -15,6 +15,19 @@ _LOGGER = logging.getLogger(__name__)
 
 # Request timeout for the OpenAI API in seconds
 REQUEST_TIMEOUT = 30
+
+# API endpoint for speech generation
+OPENAI_TTS_ENDPOINT = "https://api.openai.com/v1/audio/speech"
+
+
+async def _log_api_error(resp: ClientResponse) -> None:
+    """Log error details returned by the OpenAI API."""
+    try:
+        data = await resp.json()
+        message = data.get("error", {}).get("message", str(data))
+    except Exception:  # pragma: no cover - non-JSON error
+        message = await resp.text()
+    _LOGGER.error("OpenAI TTS API error %s: %s", resp.status, message)
 
 
 class GPT4oClient:
@@ -71,11 +84,13 @@ class GPT4oClient:
             timeout = ClientTimeout(total=REQUEST_TIMEOUT)
             async with ClientSession(timeout=timeout) as session:
                 async with session.post(
-                    "https://api.openai.com/v1/audio/speech",
+                    OPENAI_TTS_ENDPOINT,
                     headers=headers,
                     json=payload,
                 ) as resp:
-                    resp.raise_for_status()
+                    if resp.status >= 400:
+                        await _log_api_error(resp)
+                        return None, None
                     audio_chunks = []
                     async for chunk in resp.content.iter_chunked(8192):
                         if chunk:
