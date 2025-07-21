@@ -68,8 +68,9 @@ Since this is a **custom repository**, you must add it manually:
 - **Affect/Personality** (e.g., "A cheerful guide")  
 - **Tone** (e.g., "Friendly, clear, and reassuring")  
 - **Pronunciation** (e.g., "Clear, articulate, and steady")  
-- **Pauses** (e.g., "Brief, purposeful pauses after key instructions")  
-- **Emotion** (e.g., "Warm and supportive")  
+- **Pauses** (e.g., "Brief, purposeful pauses after key instructions")
+- **Emotion** (e.g., "Warm and supportive")
+- **Playback Speed** (e.g., `1.2` for 20% faster)
 6. Click **Submit**. 🎉 Done!  
 
 ![image](https://github.com/user-attachments/assets/a533cb82-8b6e-4689-8d0f-c6df0b83dc3c)

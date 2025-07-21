@@ -19,6 +19,8 @@ from .const import (
     DEFAULT_EMOTION,
     OPENAI_TTS_VOICES,
     SUPPORTED_LANGUAGES,
+    CONF_PLAYBACK_SPEED,
+    DEFAULT_PLAYBACK_SPEED,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -62,6 +64,9 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_VOICE: user_input.get(CONF_VOICE, DEFAULT_VOICE),
                 CONF_LANGUAGE: user_input.get(CONF_LANGUAGE, DEFAULT_LANGUAGE),
                 CONF_INSTRUCTIONS: user_input.get(CONF_INSTRUCTIONS, ""),
+                CONF_PLAYBACK_SPEED: float(
+                    user_input.get(CONF_PLAYBACK_SPEED, DEFAULT_PLAYBACK_SPEED)
+                ),
                 "affect_personality": affect,
                 "tone": tone,
                 "pronunciation": pron,
@@ -70,24 +75,43 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
 
             _LOGGER.debug("Creating entry with options: %s", options)
-            return self.async_create_entry(title="OpenAI GPT‑4o TTS", data=data, options=options)
+            return self.async_create_entry(
+                title="OpenAI GPT‑4o TTS", data=data, options=options
+            )
 
         # Show the setup form
-        data_schema = vol.Schema({
-            vol.Required(CONF_API_KEY): str,
-            vol.Optional(CONF_VOICE, default=DEFAULT_VOICE): vol.In(OPENAI_TTS_VOICES),
-            vol.Optional(CONF_LANGUAGE, default=DEFAULT_LANGUAGE): vol.In(SUPPORTED_LANGUAGES),
-            vol.Optional("affect_personality", default=DEFAULT_AFFECT): vol.All(str, vol.Length(min=5, max=500)),
-            vol.Optional("tone", default=DEFAULT_TONE): vol.All(str, vol.Length(min=5, max=500)),
-            vol.Optional("pronunciation", default=DEFAULT_PRONUNCIATION): vol.All(str, vol.Length(min=5, max=500)),
-            vol.Optional("pause", default=DEFAULT_PAUSE): vol.All(str, vol.Length(min=5, max=500)),
-            vol.Optional("emotion", default=DEFAULT_EMOTION): vol.All(str, vol.Length(min=5, max=500)),
-        })
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_API_KEY): str,
+                vol.Optional(CONF_VOICE, default=DEFAULT_VOICE): vol.In(
+                    OPENAI_TTS_VOICES
+                ),
+                vol.Optional(CONF_LANGUAGE, default=DEFAULT_LANGUAGE): vol.In(
+                    SUPPORTED_LANGUAGES
+                ),
+                vol.Optional(
+                    CONF_PLAYBACK_SPEED, default=DEFAULT_PLAYBACK_SPEED
+                ): vol.All(vol.Coerce(float), vol.Range(min=0.25, max=4.0)),
+                vol.Optional("affect_personality", default=DEFAULT_AFFECT): vol.All(
+                    str, vol.Length(min=5, max=500)
+                ),
+                vol.Optional("tone", default=DEFAULT_TONE): vol.All(
+                    str, vol.Length(min=5, max=500)
+                ),
+                vol.Optional("pronunciation", default=DEFAULT_PRONUNCIATION): vol.All(
+                    str, vol.Length(min=5, max=500)
+                ),
+                vol.Optional("pause", default=DEFAULT_PAUSE): vol.All(
+                    str, vol.Length(min=5, max=500)
+                ),
+                vol.Optional("emotion", default=DEFAULT_EMOTION): vol.All(
+                    str, vol.Length(min=5, max=500)
+                ),
+            }
+        )
 
         return self.async_show_form(
-            step_id="user",
-            data_schema=data_schema,
-            errors=errors
+            step_id="user", data_schema=data_schema, errors=errors
         )
 
     @staticmethod
@@ -110,17 +134,36 @@ class OpenAIGPT4oOptionsFlowHandler(config_entries.OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         existing = self._entry.options or self._entry.data
-        data_schema = vol.Schema({
-            vol.Optional(CONF_VOICE, default=existing.get(CONF_VOICE, DEFAULT_VOICE)): vol.In(OPENAI_TTS_VOICES),
-            vol.Optional(CONF_LANGUAGE, default=existing.get(CONF_LANGUAGE, DEFAULT_LANGUAGE)): vol.In(SUPPORTED_LANGUAGES),
-            vol.Optional("affect_personality", default=existing.get("affect_personality", DEFAULT_AFFECT)): vol.All(str, vol.Length(min=5, max=500)),
-            vol.Optional("tone", default=existing.get("tone", DEFAULT_TONE)): vol.All(str, vol.Length(min=5, max=500)),
-            vol.Optional("pronunciation", default=existing.get("pronunciation", DEFAULT_PRONUNCIATION)): vol.All(str, vol.Length(min=5, max=500)),
-            vol.Optional("pause", default=existing.get("pause", DEFAULT_PAUSE)): vol.All(str, vol.Length(min=5, max=500)),
-            vol.Optional("emotion", default=existing.get("emotion", DEFAULT_EMOTION)): vol.All(str, vol.Length(min=5, max=500)),
-        })
-
-        return self.async_show_form(
-            step_id="init",
-            data_schema=data_schema
+        data_schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_VOICE, default=existing.get(CONF_VOICE, DEFAULT_VOICE)
+                ): vol.In(OPENAI_TTS_VOICES),
+                vol.Optional(
+                    CONF_LANGUAGE, default=existing.get(CONF_LANGUAGE, DEFAULT_LANGUAGE)
+                ): vol.In(SUPPORTED_LANGUAGES),
+                vol.Optional(
+                    CONF_PLAYBACK_SPEED,
+                    default=existing.get(CONF_PLAYBACK_SPEED, DEFAULT_PLAYBACK_SPEED),
+                ): vol.All(vol.Coerce(float), vol.Range(min=0.25, max=4.0)),
+                vol.Optional(
+                    "affect_personality",
+                    default=existing.get("affect_personality", DEFAULT_AFFECT),
+                ): vol.All(str, vol.Length(min=5, max=500)),
+                vol.Optional(
+                    "tone", default=existing.get("tone", DEFAULT_TONE)
+                ): vol.All(str, vol.Length(min=5, max=500)),
+                vol.Optional(
+                    "pronunciation",
+                    default=existing.get("pronunciation", DEFAULT_PRONUNCIATION),
+                ): vol.All(str, vol.Length(min=5, max=500)),
+                vol.Optional(
+                    "pause", default=existing.get("pause", DEFAULT_PAUSE)
+                ): vol.All(str, vol.Length(min=5, max=500)),
+                vol.Optional(
+                    "emotion", default=existing.get("emotion", DEFAULT_EMOTION)
+                ): vol.All(str, vol.Length(min=5, max=500)),
+            }
         )
+
+        return self.async_show_form(step_id="init", data_schema=data_schema)
