@@ -26,8 +26,12 @@ With **11 built-in voices**, you can customise **how speech is rendered** to mat
 ✅ **Fully UI-based setup**—no YAML required  
 ✅ **11 voices** (`alloy`, `ash`, `ballad`, `coral`, `echo`, etc.)  
 ✅ **Customisable speech**—affect, tone, pronunciation, pauses, emotion  
-✅ **Works with Home Assistant’s Assist**  
-✅ **Easily installable via HACS**  
+✅ **Works with Home Assistant’s Assist**
+✅ **Easily installable via HACS**
+✅ **Playback speed control for faster or slower speech**
+✅ **Streaming audio for quicker responses**
+✅ **Changes take effect immediately – no restart required**
+✅ **Improved error handling and logging**
 
 ---
 
