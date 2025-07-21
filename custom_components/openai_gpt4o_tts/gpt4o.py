@@ -9,6 +9,7 @@ from .const import (
     CONF_PLAYBACK_SPEED,
     CONF_VOICE,
     DEFAULT_PLAYBACK_SPEED,
+    DEFAULT_VOICE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -63,7 +64,11 @@ class GPT4oClient:
 
         # Allow per‑call overrides, else use our stored defaults
         voice = options.get("voice", self._voice)
+        if not voice:
+            voice = DEFAULT_VOICE
         instructions = options.get("instructions", self._instructions)
+        if instructions is None:
+            instructions = ""
         audio_format = options.get("audio_output", "mp3")
 
         headers = {
