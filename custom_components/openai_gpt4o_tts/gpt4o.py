@@ -1,7 +1,12 @@
 import logging
+from typing import AsyncGenerator
+
+import aiohttp
 import requests
 
 from .const import CONF_VOICE, CONF_INSTRUCTIONS
+
+API_URL = "https://api.openai.com/v1/audio/speech"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,10 +24,45 @@ class GPT4oClient:
         # Pull default voice/instructions from options first, then legacy data
         opts = getattr(entry, "options", {}) or {}
         self._voice = opts.get(CONF_VOICE, entry.data.get(CONF_VOICE))
-        self._instructions = opts.get(CONF_INSTRUCTIONS, entry.data.get(CONF_INSTRUCTIONS))
+        self._instructions = opts.get(
+            CONF_INSTRUCTIONS, entry.data.get(CONF_INSTRUCTIONS)
+        )
 
         # Model name stays the same
         self._model = "gpt-4o-mini-tts"
+
+    async def iter_tts_audio(
+        self, text: str, options: dict | None = None
+    ) -> AsyncGenerator[bytes, None]:
+        """Yield audio chunks directly from the API."""
+        if options is None:
+            options = {}
+
+        voice = options.get("voice", self._voice)
+        instructions = options.get("instructions", self._instructions)
+        audio_format = options.get("audio_output", "mp3")
+
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": self._model,
+            "voice": voice,
+            "input": text,
+            "instructions": instructions,
+            "response_format": audio_format,
+        }
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(API_URL, headers=headers, json=payload) as resp:
+                    resp.raise_for_status()
+                    async for chunk in resp.content.iter_chunked(8192):
+                        if chunk:
+                            yield chunk
+        except Exception as err:  # pragma: no cover - network errors
+            _LOGGER.error("Error streaming GPT-4o TTS audio: %s", err)
 
     async def get_tts_audio(self, text: str, options: dict | None = None):
         """Generate TTS audio from GPT-4o using direct HTTP calls."""
@@ -48,7 +88,7 @@ class GPT4oClient:
 
         def do_request():
             resp = requests.post(
-                "https://api.openai.com/v1/audio/speech",
+                API_URL,
                 headers=headers,
                 json=payload,
                 stream=True,
