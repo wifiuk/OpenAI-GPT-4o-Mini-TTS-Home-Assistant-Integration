@@ -8,25 +8,21 @@ CONF_API_KEY = "api_key"
 CONF_VOICE = "voice"
 CONF_INSTRUCTIONS = "instructions"
 CONF_LANGUAGE = "language"
+CONF_PLAYBACK_SPEED = "playback_speed"
 
 # Default settings
 DEFAULT_VOICE = "sage"
 DEFAULT_LANGUAGE = "en"
+DEFAULT_PLAYBACK_SPEED = 1.0
 
 # Default multi-field instruction settings
 DEFAULT_AFFECT = (
     "A cheerful guide who delivers speech in a lively and engaging manner, "
     "tailoring pronunciation clearly for the listener."
 )
-DEFAULT_TONE = (
-    "A conversational, friendly tone suitable for general-purpose speech."
-)
-DEFAULT_PRONUNCIATION = (
-    "Use standard pronunciation for the language of the message."
-)
-DEFAULT_PAUSE = (
-    "Insert brief, natural pauses between sentences."
-)
+DEFAULT_TONE = "A conversational, friendly tone suitable for general-purpose speech."
+DEFAULT_PRONUNCIATION = "Use standard pronunciation for the language of the message."
+DEFAULT_PAUSE = "Insert brief, natural pauses between sentences."
 DEFAULT_EMOTION = (
     "Subtly expressive; match the content’s sentiment without over‑acting."
 )
@@ -47,9 +43,61 @@ OPENAI_TTS_VOICES = [
 
 # Full Whisper‑level language support (ISO‑639‑1 codes)
 SUPPORTED_LANGUAGES = [
-    "af","ar","hy","az","be","bs","bg","ca","zh","hr","cs","da","nl",
-    "en","et","fi","fr","gl","de","el","he","hi","hu","is","id","it",
-    "ja","kn","kk","ko","lv","lt","mk","ms","mr","mi","ne","no","fa",
-    "pl","pt","ro","ru","sr","sk","sl","es","sw","sv","tl","ta","th",
-    "tr","uk","ur","vi","cy"
+    "af",
+    "ar",
+    "hy",
+    "az",
+    "be",
+    "bs",
+    "bg",
+    "ca",
+    "zh",
+    "hr",
+    "cs",
+    "da",
+    "nl",
+    "en",
+    "et",
+    "fi",
+    "fr",
+    "gl",
+    "de",
+    "el",
+    "he",
+    "hi",
+    "hu",
+    "is",
+    "id",
+    "it",
+    "ja",
+    "kn",
+    "kk",
+    "ko",
+    "lv",
+    "lt",
+    "mk",
+    "ms",
+    "mr",
+    "mi",
+    "ne",
+    "no",
+    "fa",
+    "pl",
+    "pt",
+    "ro",
+    "ru",
+    "sr",
+    "sk",
+    "sl",
+    "es",
+    "sw",
+    "sv",
+    "tl",
+    "ta",
+    "th",
+    "tr",
+    "uk",
+    "ur",
+    "vi",
+    "cy",
 ]
