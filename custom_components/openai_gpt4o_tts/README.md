@@ -25,7 +25,7 @@ With **11 built-in voices**, you can customise **how speech is rendered** to mat
 ✅ **Uses GPT-4o Mini TTS**, OpenAI’s latest speech model  
 ✅ **Fully UI-based setup**—no YAML required  
 ✅ **11 voices** (`alloy`, `ash`, `ballad`, `coral`, `echo`, etc.)  
-✅ **Customisable speech**—affect, tone, pronunciation, pauses, emotion  
+✅ **Customisable speech**—affect, tone, pronunciation, pauses, emotion, speed
 ✅ **Works with Home Assistant’s Assist**  
 ✅ **Easily installable via HACS**  
 
@@ -68,9 +68,10 @@ Since this is a **custom repository**, you must add it manually:
 - **Affect/Personality** (e.g., "A cheerful guide")  
 - **Tone** (e.g., "Friendly, clear, and reassuring")  
 - **Pronunciation** (e.g., "Clear, articulate, and steady")  
-- **Pauses** (e.g., "Brief, purposeful pauses after key instructions")  
-- **Emotion** (e.g., "Warm and supportive")  
-6. Click **Submit**. 🎉 Done!  
+- **Pauses** (e.g., "Brief, purposeful pauses after key instructions")
+- **Emotion** (e.g., "Warm and supportive")
+- **Speed** (0.25–4.0, where 1.0 is normal)
+6. Click **Submit**. 🎉 Done!
 
 ![image](https://github.com/user-attachments/assets/a533cb82-8b6e-4689-8d0f-c6df0b83dc3c)
 

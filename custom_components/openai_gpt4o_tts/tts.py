@@ -11,7 +11,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, OPENAI_TTS_VOICES, SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE
+from .const import (
+    DOMAIN,
+    OPENAI_TTS_VOICES,
+    SUPPORTED_LANGUAGES,
+    DEFAULT_LANGUAGE,
+    CONF_SPEED,
+)
 from .gpt4o import GPT4oClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -59,13 +65,15 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
     @property
     def supported_options(self) -> list[str]:
         """Which TTS options can be overridden in the UI or service call."""
-        return [ATTR_VOICE, "instructions", ATTR_AUDIO_OUTPUT]
+        return [ATTR_VOICE, "instructions", ATTR_AUDIO_OUTPUT, CONF_SPEED]
 
     async def async_get_tts_audio(
         self, message: str, language: str, options: dict | None = None
     ) -> TtsAudioType:
         """Called by Home Assistant to produce audio from text."""
-        audio_format, audio_data = await self._client.get_tts_audio(message, options)
+        audio_format, audio_data = await self._client.get_tts_audio(
+            message, options
+        )
         if not audio_data:
             return None, None
         return audio_format, audio_data
