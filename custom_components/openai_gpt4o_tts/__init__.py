@@ -11,11 +11,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up GPT-4o TTS from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
-    # Store the config entry so it persists
-    hass.data[DOMAIN][entry.entry_id] = entry
-
-    # Initialize the GPT-4o TTS client
-    hass.data[DOMAIN][entry.entry_id] = GPT4oClient(hass, entry)
+    # Store both the entry and client for easy retrieval later
+    hass.data[DOMAIN][entry.entry_id] = {
+        "entry": entry,
+        "client": GPT4oClient(hass, entry),
+    }
 
     # Forward to TTS platform so HA creates 'tts.openai_gpt4o_tts_say'
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

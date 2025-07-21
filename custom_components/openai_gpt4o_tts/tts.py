@@ -23,7 +23,8 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up GPT‑4o TTS from a config entry."""
-    client = hass.data[DOMAIN][config_entry.entry_id]
+    data = hass.data[DOMAIN][config_entry.entry_id]
+    client = data["client"]
     async_add_entities([OpenAIGPT4oTTSProvider(config_entry, client)])
 
 
