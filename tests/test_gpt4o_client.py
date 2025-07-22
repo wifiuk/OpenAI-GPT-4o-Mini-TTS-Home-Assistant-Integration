@@ -84,3 +84,52 @@ async def test_instructions_default(monkeypatch):
     assert fmt == "mp3"
     assert dummy.payload["instructions"] == ""
     assert dummy.payload["voice"] == DEFAULT_VOICE
+
+
+class ErrorResponse:
+    def __init__(self, message: str, use_json: bool = True):
+        self.status = 401
+        self._message = message
+        self.use_json = use_json
+
+    async def json(self):
+        if self.use_json:
+            return {"error": {"message": self._message}}
+        raise ValueError("no json")
+
+    async def text(self):
+        return self._message
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "key",
+    [
+        "sk-1234567890ABCDEF",
+        "sk-proj-ABCDEFG1234567890",
+        "sk-svcacct-1234567890ABCDEF",
+    ],
+)
+async def test_log_api_error_masks_api_key_json(caplog, key):
+    resp = ErrorResponse(f"invalid key {key}")
+    with caplog.at_level("ERROR"):
+        await gpt4o._log_api_error(resp)
+    assert key not in caplog.text
+    assert "sk-***" in caplog.text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "key",
+    [
+        "sk-1234567890ABCDEF",
+        "sk-proj-ABCDEFG1234567890",
+        "sk-svcacct-1234567890ABCDEF",
+    ],
+)
+async def test_log_api_error_masks_api_key_text(caplog, key):
+    resp = ErrorResponse(f"bad request {key}", use_json=False)
+    with caplog.at_level("ERROR"):
+        await gpt4o._log_api_error(resp)
+    assert key not in caplog.text
+    assert "sk-***" in caplog.text

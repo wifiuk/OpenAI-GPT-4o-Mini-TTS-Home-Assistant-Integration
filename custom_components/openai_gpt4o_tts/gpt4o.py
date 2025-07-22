@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import re
 from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
 
 from .const import (
@@ -20,6 +21,16 @@ REQUEST_TIMEOUT = 30
 # API endpoint for speech generation
 OPENAI_TTS_ENDPOINT = "https://api.openai.com/v1/audio/speech"
 
+# Regex to detect API keys so they can be masked in logs. Keys may include
+# prefixes like ``sk-proj-`` or ``sk-svcacct-`` so we allow hyphens in the
+# character set and require a reasonable length to avoid false positives.
+_API_KEY_RE = re.compile(r"sk-[A-Za-z0-9-]{16,}")
+
+
+def _mask_api_keys(text: str) -> str:
+    """Return ``text`` with API keys masked."""
+    return _API_KEY_RE.sub("sk-***", text)
+
 
 async def _log_api_error(resp: ClientResponse) -> None:
     """Log error details returned by the OpenAI API."""
@@ -28,7 +39,8 @@ async def _log_api_error(resp: ClientResponse) -> None:
         message = data.get("error", {}).get("message", str(data))
     except Exception:  # pragma: no cover - non-JSON error
         message = await resp.text()
-    _LOGGER.error("OpenAI TTS API error %s: %s", resp.status, message)
+    sanitized = _mask_api_keys(str(message))
+    _LOGGER.error("OpenAI TTS API error %s: %s", resp.status, sanitized)
 
 
 class GPT4oClient:
