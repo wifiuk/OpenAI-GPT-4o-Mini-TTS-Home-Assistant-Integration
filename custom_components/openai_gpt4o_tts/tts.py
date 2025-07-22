@@ -85,6 +85,21 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
             return None, None
         return audio_format, audio_data
 
+    async def async_stream_tts_audio(
+        self, message: str, language: str, options: dict | None = None
+    ) -> TtsAudioType:
+        """Stream audio chunks as they are generated."""
+        if options is None:
+            options = {}
+        stream_format = options.get(CONF_STREAM_FORMAT, self._client.stream_format)
+        if stream_format != "sse":
+            return await self.async_get_tts_audio(message, language, options)
+
+        audio_format, iterator = await self._client.stream_tts_audio(message, options)
+        if not iterator:
+            return None, None
+        return audio_format, iterator
+
     def async_get_supported_voices(self, language: str) -> list[Voice] | None:
         """Return known GPT‑4o voices for the voice dropdown."""
         return [Voice(vid, vid.capitalize()) for vid in OPENAI_TTS_VOICES]
