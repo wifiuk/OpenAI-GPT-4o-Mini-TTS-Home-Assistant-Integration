@@ -126,11 +126,23 @@ No, **OpenAI’s API is a paid service**. You are charged per character generate
 
 ## 🤝 Contributing  
 
-Want to help improve this project? Contributions are welcome!  
+Want to help improve this project? Contributions are welcome!
 
-1. Fork the repo  
-2. Submit pull requests for features/fixes  
-3. Report issues or suggest improvements  
+1. Fork the repo
+2. Submit pull requests for features/fixes
+3. Report issues or suggest improvements
+4. Run `pre-commit` before pushing to ensure `flake8` checks pass
+
+This repository includes a basic `.flake8` configuration and a
+`.pre-commit-config.yaml` that runs `flake8`. Install the
+hooks with:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+Then simply commit your changes as normal.
 
 ---
 
