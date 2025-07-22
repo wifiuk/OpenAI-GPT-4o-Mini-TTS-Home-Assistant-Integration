@@ -75,7 +75,10 @@ Since this is a **custom repository**, you must add it manually:
 - **Pauses** (e.g., "Brief, purposeful pauses after key instructions")
 - **Emotion** (e.g., "Warm and supportive")
 - **Playback Speed** (e.g., `1.2` for 20% faster)
-6. Click **Submit**. 🎉 Done!  
+- **Model** (e.g., `gpt-4o-mini-tts`)
+- **Audio Format** (e.g., `mp3`, `wav`)
+- **Stream Format** (e.g., `audio` or `sse`)
+6. Click **Submit**. 🎉 Done!
 
 ![image](https://github.com/user-attachments/assets/a533cb82-8b6e-4689-8d0f-c6df0b83dc3c)
 

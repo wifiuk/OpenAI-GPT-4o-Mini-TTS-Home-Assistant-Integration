@@ -9,8 +9,14 @@ from .const import (
     CONF_INSTRUCTIONS,
     CONF_PLAYBACK_SPEED,
     CONF_VOICE,
+    CONF_MODEL,
+    CONF_AUDIO_OUTPUT,
+    CONF_STREAM_FORMAT,
     DEFAULT_PLAYBACK_SPEED,
     DEFAULT_VOICE,
+    DEFAULT_MODEL,
+    DEFAULT_AUDIO_OUTPUT,
+    DEFAULT_STREAM_FORMAT,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -65,9 +71,20 @@ class GPT4oClient:
                 entry.data.get(CONF_PLAYBACK_SPEED, DEFAULT_PLAYBACK_SPEED),
             )
         )
+        self._model = opts.get(
+            CONF_MODEL, entry.data.get(CONF_MODEL, DEFAULT_MODEL)
+        )
+        self._audio_output = opts.get(
+            CONF_AUDIO_OUTPUT, entry.data.get(CONF_AUDIO_OUTPUT, DEFAULT_AUDIO_OUTPUT)
+        )
+        self._stream_format = opts.get(
+            CONF_STREAM_FORMAT, entry.data.get(CONF_STREAM_FORMAT, DEFAULT_STREAM_FORMAT)
+        )
 
-        # Model name stays the same
-        self._model = "gpt-4o-mini-tts"
+    @property
+    def audio_output(self) -> str:
+        """Return the default audio output format."""
+        return self._audio_output
 
     async def get_tts_audio(self, text: str, options: dict | None = None):
         """Generate TTS audio from GPT-4o using direct HTTP calls."""
@@ -75,25 +92,24 @@ class GPT4oClient:
             options = {}
 
         # Allow per‑call overrides, else use our stored defaults
-        voice = options.get("voice", self._voice)
-        if not voice:
-            voice = DEFAULT_VOICE
-        instructions = options.get("instructions", self._instructions)
-        if instructions is None:
-            instructions = ""
-        audio_format = options.get("audio_output", "mp3")
+        voice = options.get("voice", self._voice) or DEFAULT_VOICE
+        instructions = options.get("instructions", self._instructions) or ""
+        audio_format = options.get("audio_output", self._audio_output)
+        model = options.get(CONF_MODEL, self._model)
+        stream_format = options.get(CONF_STREAM_FORMAT, self._stream_format)
 
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
         payload = {
-            "model": self._model,
+            "model": model,
             "voice": voice,
             "input": text,
             "instructions": instructions,
             "response_format": audio_format,
             "speed": float(options.get(CONF_PLAYBACK_SPEED, self._playback_speed)),
+            "stream_format": stream_format,
         }
 
         async def do_request() -> tuple[str | None, bytes | None]:

@@ -84,6 +84,9 @@ async def test_instructions_default(monkeypatch):
     assert fmt == "mp3"
     assert dummy.payload["instructions"] == ""
     assert dummy.payload["voice"] == DEFAULT_VOICE
+    assert dummy.payload["model"] == gpt4o.DEFAULT_MODEL
+    assert dummy.payload["response_format"] == gpt4o.DEFAULT_AUDIO_OUTPUT
+    assert dummy.payload["stream_format"] == gpt4o.DEFAULT_STREAM_FORMAT
 
 
 class ErrorResponse:
