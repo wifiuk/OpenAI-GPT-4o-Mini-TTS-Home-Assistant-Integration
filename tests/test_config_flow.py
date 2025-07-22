@@ -16,6 +16,7 @@ ha.const = types.ModuleType("const")
 ha.config_entries.CONN_CLASS_CLOUD_POLL = "cloud_poll"
 ha.const.CONF_API_KEY = "api_key"
 
+
 class _BaseConfigFlow:
     def __init_subclass__(cls, *args, domain=None, **kwargs):
         super().__init_subclass__(*args, **kwargs)
@@ -27,6 +28,7 @@ class _BaseConfigFlow:
     def async_create_entry(self, **kwargs):
         self.created_entry = kwargs
         return kwargs
+
 
 ha.config_entries.ConfigFlow = _BaseConfigFlow
 ha.config_entries.OptionsFlow = object
@@ -46,14 +48,17 @@ gpt4o = importlib.import_module("custom_components.openai_gpt4o_tts.gpt4o")
 OpenAIGPT4oConfigFlow = cfg_flow.OpenAIGPT4oConfigFlow
 GPT4oClient = gpt4o.GPT4oClient
 
+
 class DummyEntry:
     def __init__(self, data=None, options=None):
         self.data = data or {}
         self.options = options or {}
 
+
 class DummyContent:
     async def iter_chunked(self, size):
         yield b"audio"
+
 
 class DummyResponse:
     def __init__(self):
@@ -71,6 +76,7 @@ class DummyResponse:
 
     async def text(self):
         return ""
+
 
 class DummySession:
     def __init__(self, *args, **kwargs):
@@ -110,3 +116,12 @@ async def test_api_key_whitespace(monkeypatch):
     assert dummy.payload["model"] == gpt4o.DEFAULT_MODEL
     assert dummy.payload["response_format"] == gpt4o.DEFAULT_AUDIO_OUTPUT
     assert dummy.payload["stream_format"] == gpt4o.DEFAULT_STREAM_FORMAT
+
+
+@pytest.mark.asyncio
+async def test_stream_format_option():
+    flow = OpenAIGPT4oConfigFlow()
+    result = await flow.async_step_user(
+        {"api_key": "k", gpt4o.CONF_STREAM_FORMAT: "sse"}
+    )
+    assert result["options"][gpt4o.CONF_STREAM_FORMAT] == "sse"
