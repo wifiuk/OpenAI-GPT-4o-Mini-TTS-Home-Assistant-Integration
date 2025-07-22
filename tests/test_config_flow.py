@@ -1,0 +1,109 @@
+import os
+import sys
+import importlib
+import types
+
+import pytest
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+# Stub minimal Home Assistant modules required for import
+ha = types.ModuleType("homeassistant")
+ha.config_entries = types.ModuleType("config_entries")
+ha.core = types.ModuleType("core")
+ha.const = types.ModuleType("const")
+
+ha.config_entries.CONN_CLASS_CLOUD_POLL = "cloud_poll"
+ha.const.CONF_API_KEY = "api_key"
+
+class _BaseConfigFlow:
+    def __init_subclass__(cls, *args, domain=None, **kwargs):
+        super().__init_subclass__(*args, **kwargs)
+        cls.domain = domain
+
+    def async_show_form(self, **kwargs):
+        return kwargs
+
+    def async_create_entry(self, **kwargs):
+        self.created_entry = kwargs
+        return kwargs
+
+ha.config_entries.ConfigFlow = _BaseConfigFlow
+ha.config_entries.OptionsFlow = object
+ha.config_entries.ConfigEntry = object
+ha.core.HomeAssistant = object
+ha.core.callback = lambda func: func
+
+sys.modules.setdefault("homeassistant", ha)
+sys.modules.setdefault("homeassistant.config_entries", ha.config_entries)
+sys.modules.setdefault("homeassistant.core", ha.core)
+sys.modules.setdefault("homeassistant.const", ha.const)
+
+sys.path.insert(0, BASE_DIR)
+
+cfg_flow = importlib.import_module("custom_components.openai_gpt4o_tts.config_flow")
+gpt4o = importlib.import_module("custom_components.openai_gpt4o_tts.gpt4o")
+OpenAIGPT4oConfigFlow = cfg_flow.OpenAIGPT4oConfigFlow
+GPT4oClient = gpt4o.GPT4oClient
+
+class DummyEntry:
+    def __init__(self, data=None, options=None):
+        self.data = data or {}
+        self.options = options or {}
+
+class DummyContent:
+    async def iter_chunked(self, size):
+        yield b"audio"
+
+class DummyResponse:
+    def __init__(self):
+        self.status = 200
+        self.content = DummyContent()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        pass
+
+    async def json(self):
+        return {}
+
+    async def text(self):
+        return ""
+
+class DummySession:
+    def __init__(self, *args, **kwargs):
+        self.payload = None
+        self.headers = None
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        pass
+
+    def post(self, url, headers=None, json=None):
+        self.payload = json
+        self.headers = headers
+        return DummyResponse()
+
+
+@pytest.mark.asyncio
+async def test_api_key_whitespace(monkeypatch):
+    flow = OpenAIGPT4oConfigFlow()
+    result = await flow.async_step_user({"api_key": "  k  "})
+    assert result["data"]["api_key"] == "k"
+
+    entry = DummyEntry(data=result["data"])
+    client = GPT4oClient(None, entry)
+
+    dummy = DummySession()
+    monkeypatch.setattr(
+        "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
+        lambda timeout=None: dummy,
+    )
+
+    fmt, data = await client.get_tts_audio("hi")
+    assert fmt == "mp3"
+    assert dummy.headers["Authorization"] == "Bearer k"

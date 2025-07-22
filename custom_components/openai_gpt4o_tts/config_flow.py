@@ -59,7 +59,8 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             user_input[CONF_INSTRUCTIONS] = "\n".join(parts)
 
             # Build data + options dicts
-            data = {CONF_API_KEY: user_input[CONF_API_KEY]}
+            api_key = user_input[CONF_API_KEY].strip()
+            data = {CONF_API_KEY: api_key}
             options = {
                 CONF_VOICE: user_input.get(CONF_VOICE, DEFAULT_VOICE),
                 CONF_LANGUAGE: user_input.get(CONF_LANGUAGE, DEFAULT_LANGUAGE),
