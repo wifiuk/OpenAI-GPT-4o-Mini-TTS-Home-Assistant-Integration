@@ -19,8 +19,17 @@ from .const import (
     DEFAULT_EMOTION,
     OPENAI_TTS_VOICES,
     SUPPORTED_LANGUAGES,
+    OPENAI_TTS_MODELS,
+    OPENAI_AUDIO_FORMATS,
+    OPENAI_STREAM_FORMATS,
     CONF_PLAYBACK_SPEED,
     DEFAULT_PLAYBACK_SPEED,
+    CONF_MODEL,
+    CONF_AUDIO_OUTPUT,
+    CONF_STREAM_FORMAT,
+    DEFAULT_MODEL,
+    DEFAULT_AUDIO_OUTPUT,
+    DEFAULT_STREAM_FORMAT,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -65,6 +74,9 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_VOICE: user_input.get(CONF_VOICE, DEFAULT_VOICE),
                 CONF_LANGUAGE: user_input.get(CONF_LANGUAGE, DEFAULT_LANGUAGE),
                 CONF_INSTRUCTIONS: user_input.get(CONF_INSTRUCTIONS, ""),
+                CONF_MODEL: user_input.get(CONF_MODEL, DEFAULT_MODEL),
+                CONF_AUDIO_OUTPUT: user_input.get(CONF_AUDIO_OUTPUT, DEFAULT_AUDIO_OUTPUT),
+                CONF_STREAM_FORMAT: user_input.get(CONF_STREAM_FORMAT, DEFAULT_STREAM_FORMAT),
                 CONF_PLAYBACK_SPEED: float(
                     user_input.get(CONF_PLAYBACK_SPEED, DEFAULT_PLAYBACK_SPEED)
                 ),
@@ -89,6 +101,15 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
                 vol.Optional(CONF_LANGUAGE, default=DEFAULT_LANGUAGE): vol.In(
                     SUPPORTED_LANGUAGES
+                ),
+                vol.Optional(CONF_MODEL, default=DEFAULT_MODEL): vol.In(
+                    OPENAI_TTS_MODELS
+                ),
+                vol.Optional(CONF_AUDIO_OUTPUT, default=DEFAULT_AUDIO_OUTPUT): vol.In(
+                    OPENAI_AUDIO_FORMATS
+                ),
+                vol.Optional(CONF_STREAM_FORMAT, default=DEFAULT_STREAM_FORMAT): vol.In(
+                    OPENAI_STREAM_FORMATS
                 ),
                 vol.Optional(
                     CONF_PLAYBACK_SPEED, default=DEFAULT_PLAYBACK_SPEED
@@ -143,6 +164,17 @@ class OpenAIGPT4oOptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Optional(
                     CONF_LANGUAGE, default=existing.get(CONF_LANGUAGE, DEFAULT_LANGUAGE)
                 ): vol.In(SUPPORTED_LANGUAGES),
+                vol.Optional(
+                    CONF_MODEL, default=existing.get(CONF_MODEL, DEFAULT_MODEL)
+                ): vol.In(OPENAI_TTS_MODELS),
+                vol.Optional(
+                    CONF_AUDIO_OUTPUT,
+                    default=existing.get(CONF_AUDIO_OUTPUT, DEFAULT_AUDIO_OUTPUT),
+                ): vol.In(OPENAI_AUDIO_FORMATS),
+                vol.Optional(
+                    CONF_STREAM_FORMAT,
+                    default=existing.get(CONF_STREAM_FORMAT, DEFAULT_STREAM_FORMAT),
+                ): vol.In(OPENAI_STREAM_FORMATS),
                 vol.Optional(
                     CONF_PLAYBACK_SPEED,
                     default=existing.get(CONF_PLAYBACK_SPEED, DEFAULT_PLAYBACK_SPEED),

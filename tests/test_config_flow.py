@@ -107,3 +107,6 @@ async def test_api_key_whitespace(monkeypatch):
     fmt, data = await client.get_tts_audio("hi")
     assert fmt == "mp3"
     assert dummy.headers["Authorization"] == "Bearer k"
+    assert dummy.payload["model"] == gpt4o.DEFAULT_MODEL
+    assert dummy.payload["response_format"] == gpt4o.DEFAULT_AUDIO_OUTPUT
+    assert dummy.payload["stream_format"] == gpt4o.DEFAULT_STREAM_FORMAT

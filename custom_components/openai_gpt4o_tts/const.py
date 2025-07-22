@@ -9,11 +9,17 @@ CONF_VOICE = "voice"
 CONF_INSTRUCTIONS = "instructions"
 CONF_LANGUAGE = "language"
 CONF_PLAYBACK_SPEED = "playback_speed"
+CONF_MODEL = "model"
+CONF_AUDIO_OUTPUT = "audio_output"
+CONF_STREAM_FORMAT = "stream_format"
 
 # Default settings
 DEFAULT_VOICE = "sage"
 DEFAULT_LANGUAGE = "en"
 DEFAULT_PLAYBACK_SPEED = 1.0
+DEFAULT_MODEL = "gpt-4o-mini-tts"
+DEFAULT_AUDIO_OUTPUT = "mp3"
+DEFAULT_STREAM_FORMAT = "audio"
 
 # Default multi-field instruction settings
 DEFAULT_AFFECT = (
@@ -40,6 +46,11 @@ OPENAI_TTS_VOICES = [
     "sage",
     "shimmer",
 ]
+
+# Supported models and formats
+OPENAI_TTS_MODELS = ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"]
+OPENAI_AUDIO_FORMATS = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
+OPENAI_STREAM_FORMATS = ["audio", "sse"]
 
 # Full Whisper‑level language support (ISO‑639‑1 codes)
 SUPPORTED_LANGUAGES = [
