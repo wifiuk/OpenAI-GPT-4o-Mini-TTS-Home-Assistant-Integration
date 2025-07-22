@@ -188,6 +188,28 @@ async def test_default_stream_from_entry(monkeypatch):
     assert data == b"data1data2"
 
 
+@pytest.mark.asyncio
+async def test_stream_tts_audio_generator(monkeypatch):
+    entry = DummyEntry(data={"api_key": "k"})
+    client = GPT4oClient(None, entry)
+
+    lines = [
+        b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTE="}\n\n',
+        b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTI="}\n\n',
+        b'data: {"type": "speech.audio.done"}\n\n',
+    ]
+    session = DummySSESession(lines)
+    monkeypatch.setattr(
+        "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
+        lambda timeout=None: session,
+    )
+
+    fmt, generator = await client.stream_tts_audio("hi", {gpt4o.CONF_STREAM_FORMAT: "sse"})
+    assert fmt == "mp3"
+    data = b"".join([chunk async for chunk in generator])
+    assert data == b"data1data2"
+
+
 class ErrorResponse:
     def __init__(self, message: str, use_json: bool = True):
         self.status = 401
