@@ -1,6 +1,9 @@
 """Client for OpenAI GPT-4o Mini TTS."""
 
 import asyncio
+import base64
+import binascii
+import json
 import logging
 import re
 from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
@@ -81,17 +84,54 @@ class GPT4oClient:
             CONF_STREAM_FORMAT, entry.data.get(CONF_STREAM_FORMAT, DEFAULT_STREAM_FORMAT)
         )
 
+    async def _iter_sse_audio(self, resp: ClientResponse):
+        """Yield audio bytes from an SSE response."""
+        buffer = ""
+        async for raw in resp.content:
+            line = raw.decode("utf-8")
+            if line.startswith("data:"):
+                data_part = line[5:].strip()
+                if data_part == "[DONE]":
+                    break
+                buffer += data_part
+            elif line.strip() == "":
+                if not buffer:
+                    continue
+                try:
+                    event = json.loads(buffer)
+                except json.JSONDecodeError:
+                    buffer = ""
+                    continue
+                buffer = ""
+                if event.get("type") == "speech.audio.delta":
+                    audio_b64 = event.get("audio", "")
+                    if audio_b64:
+                        try:
+                            yield base64.b64decode(audio_b64)
+                        except (binascii.Error, ValueError):
+                            _LOGGER.warning("Invalid audio chunk in SSE stream")
+                elif event.get("type") == "speech.audio.done":
+                    break
+        if buffer:
+            try:
+                event = json.loads(buffer)
+                if event.get("type") == "speech.audio.delta":
+                    audio_b64 = event.get("audio", "")
+                    if audio_b64:
+                        yield base64.b64decode(audio_b64)
+            except json.JSONDecodeError:
+                pass
+
     @property
     def audio_output(self) -> str:
         """Return the default audio output format."""
         return self._audio_output
 
-    async def get_tts_audio(self, text: str, options: dict | None = None):
-        """Generate TTS audio from GPT-4o using direct HTTP calls."""
+    async def iter_tts_audio(self, text: str, options: dict | None = None):
+        """Asynchronously yield audio chunks from the API."""
         if options is None:
             options = {}
 
-        # Allow per‑call overrides, else use our stored defaults
         voice = options.get("voice", self._voice) or DEFAULT_VOICE
         instructions = options.get("instructions", self._instructions) or ""
         audio_format = options.get("audio_output", self._audio_output)
@@ -112,26 +152,32 @@ class GPT4oClient:
             "stream_format": stream_format,
         }
 
-        async def do_request() -> tuple[str | None, bytes | None]:
-            """Send TTS request to OpenAI and return audio data."""
-            timeout = ClientTimeout(total=REQUEST_TIMEOUT)
-            async with ClientSession(timeout=timeout) as session:
-                async with session.post(
-                    OPENAI_TTS_ENDPOINT,
-                    headers=headers,
-                    json=payload,
-                ) as resp:
-                    if resp.status >= 400:
-                        await _log_api_error(resp)
-                        return None, None
-                    audio_chunks = []
+        timeout = ClientTimeout(total=REQUEST_TIMEOUT)
+        async with ClientSession(timeout=timeout) as session:
+            async with session.post(
+                OPENAI_TTS_ENDPOINT,
+                headers=headers,
+                json=payload,
+            ) as resp:
+                if resp.status >= 400:
+                    await _log_api_error(resp)
+                    return
+                if stream_format == "sse":
+                    async for chunk in self._iter_sse_audio(resp):
+                        yield chunk
+                else:
                     async for chunk in resp.content.iter_chunked(8192):
                         if chunk:
-                            audio_chunks.append(chunk)
-                    return audio_format, b"".join(audio_chunks)
+                            yield chunk
 
+    async def get_tts_audio(self, text: str, options: dict | None = None):
+        """Generate TTS audio from GPT-4o using direct HTTP calls."""
         try:
-            return await do_request()
+            audio_chunks = [chunk async for chunk in self.iter_tts_audio(text, options)]
+            if not audio_chunks:
+                return None, None
+            audio_format = options.get("audio_output", self._audio_output) if options else self._audio_output
+            return audio_format, b"".join(audio_chunks)
         except asyncio.TimeoutError:
             _LOGGER.error(
                 "GPT-4o TTS request timed out after %s seconds", REQUEST_TIMEOUT
