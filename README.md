@@ -26,12 +26,12 @@ With **11 built-in voices**, you can customise **how speech is rendered** to mat
 ✅ **Fully UI-based setup**—no YAML required  
 ✅ **11 voices** (`alloy`, `ash`, `ballad`, `coral`, `echo`, etc.)  
 ✅ **Customisable speech**—affect, tone, pronunciation, pauses, emotion  
-✅ **Works with Home Assistant’s Assist**
-✅ **Easily installable via HACS**
-✅ **Playback speed control for faster or slower speech**
-✅ **Streaming audio for quicker responses**
-✅ **Changes take effect immediately – no restart required**
-✅ **Improved error handling and logging**
+✅ **Works with Home Assistant’s Assist**  
+✅ **Easily installable via HACS**  
+✅ **Playback speed control for faster or slower speech**  
+✅ **Streaming audio for quicker responses**  
+✅ **Changes take effect immediately – no restart required**  
+✅ **Improved error handling and logging**  
 
 ---
 
@@ -54,8 +54,7 @@ Since this is a **custom repository**, you must add it manually:
 ### 2️⃣ Manual Installation (Alternative)  
 
 1. Download this repository as a **ZIP file** and extract it.  
-2. Copy the `openai_gpt4o_tts` folder to:  /config/custom_components/
-
+2. Copy the `openai_gpt4o_tts` folder to:  /config/custom_components/  
 3. Restart Home Assistant.  
 4. Go to **Settings → Devices & Services → Add Integration**.  
 5. Search for **OpenAI GPT-4o Mini TTS** and follow the setup process.  
@@ -97,7 +96,7 @@ Once the repo is installed, follow these steps:
 2. **Choose your assistant** (e.g., Assist).  
 3. Scroll down to **Text-to-Speech** settings.  
 4. **Select "OpenAI GPT-4o Mini TTS" from the dropdown**.  
-5. **Choose the same voice you setup earlier**    
+5. **Choose the same voice you set up earlier**    
 6. **Save settings** and test voice output.
 
 ![image](https://github.com/user-attachments/assets/6f61f299-1c51-4109-ab5b-f7b1a1e6f658)
