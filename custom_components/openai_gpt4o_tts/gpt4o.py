@@ -84,6 +84,11 @@ class GPT4oClient:
             CONF_STREAM_FORMAT, entry.data.get(CONF_STREAM_FORMAT, DEFAULT_STREAM_FORMAT)
         )
 
+    @property
+    def stream_format(self) -> str:
+        """Return the default stream format."""
+        return self._stream_format
+
     async def _iter_sse_audio(self, resp: ClientResponse):
         """Yield audio bytes from an SSE response."""
         buffer = ""
@@ -187,3 +192,14 @@ class GPT4oClient:
         except Exception as err:  # pragma: no cover - unexpected errors
             _LOGGER.error("Unexpected error generating GPT-4o TTS audio: %s", err)
         return None, None
+
+    async def stream_tts_audio(self, text: str, options: dict | None = None):
+        """Return async iterator for TTS audio without joining chunks."""
+        if options is None:
+            options = {}
+        audio_format = options.get("audio_output", self._audio_output)
+        try:
+            return audio_format, self.iter_tts_audio(text, options)
+        except Exception as err:  # pragma: no cover - unexpected errors
+            _LOGGER.error("Error starting GPT-4o TTS stream: %s", err)
+            return None, None
