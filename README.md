@@ -77,9 +77,10 @@ Since this is a **custom repository**, you must add it manually:
 - **Model** (e.g., `gpt-4o-mini-tts`)
 - **Audio Format** (e.g., `mp3`, `wav`)
 - **Stream Format** – choose `sse` to stream audio while it is generated or `audio` to wait for the full file
-6. Click **Submit**. 🎉 Done!
+6. Click **Submit**. 🎉 Done!  
 
-![image](https://github.com/user-attachments/assets/a533cb82-8b6e-4689-8d0f-c6df0b83dc3c)
+
+<img width="334" height="1045" alt="image" src="https://github.com/user-attachments/assets/fb6f147e-b016-4766-bcb9-f1ddeec87ffa" />
 
 
 Now, Home Assistant's voice assistant will use GPT-4o Mini TTS as its **speech provider**.
