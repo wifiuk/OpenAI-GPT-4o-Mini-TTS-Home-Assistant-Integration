@@ -1,35 +1,19 @@
 import asyncio
 import os
 import sys
-import importlib.util
-import types
+import importlib
 from types import SimpleNamespace
 
 import pytest
 
+sys.path.insert(0, os.path.dirname(__file__))
+from hass_stubs import install_homeassistant_stubs
+
+install_homeassistant_stubs()
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
-# Stub minimal Home Assistant modules required for import
-ha = types.ModuleType("homeassistant")
-ha.config_entries = types.ModuleType("config_entries")
-ha.core = types.ModuleType("core")
-ha.helpers = types.ModuleType("helpers")
-ha.helpers.entity_platform = types.ModuleType("entity_platform")
-ha.components = types.ModuleType("components")
-ha.components.tts = types.ModuleType("tts")
-ha.config_entries.ConfigEntry = object
-ha.core.HomeAssistant = object
-sys.modules.setdefault("homeassistant", ha)
-sys.modules.setdefault("homeassistant.config_entries", ha.config_entries)
-sys.modules.setdefault("homeassistant.core", ha.core)
-sys.modules.setdefault("homeassistant.helpers", ha.helpers)
-sys.modules.setdefault(
-    "homeassistant.helpers.entity_platform", ha.helpers.entity_platform
-)
-sys.modules.setdefault("homeassistant.components", ha.components)
-sys.modules.setdefault("homeassistant.components.tts", ha.components.tts)
-
 sys.path.insert(0, BASE_DIR)
+
 gpt4o = importlib.import_module("custom_components.openai_gpt4o_tts.gpt4o")
 GPT4oClient = gpt4o.GPT4oClient
 DEFAULT_VOICE = gpt4o.DEFAULT_VOICE

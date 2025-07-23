@@ -1,66 +1,18 @@
 import os
 import sys
-import types
 import importlib
-from dataclasses import dataclass
 from collections.abc import AsyncGenerator
+
 import pytest
 
+sys.path.insert(0, os.path.dirname(__file__))
+from hass_stubs import install_homeassistant_stubs
+
+install_homeassistant_stubs()
+
+from homeassistant.components.tts import TTSAudioRequest, TTSAudioResponse
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
-# Stub minimal Home Assistant modules required for import
-ha = types.ModuleType("homeassistant")
-ha.__path__ = []
-ha.components = types.ModuleType("components")
-ha.components.__path__ = []
-ha.components.tts = types.ModuleType("tts")
-ha.components.tts.__package__ = "homeassistant.components"
-ha.components.tts.__path__ = []
-ha.components.tts.TextToSpeechEntity = object
-ha.components.tts.ATTR_AUDIO_OUTPUT = "audio_output"
-ha.components.tts.ATTR_VOICE = "voice"
-ha.components.tts.Voice = object
-ha.components.tts.TtsAudioType = tuple[str | None, bytes | None]
-
-ha.config_entries = types.ModuleType("config_entries")
-ha.core = types.ModuleType("core")
-ha.helpers = types.ModuleType("helpers")
-ha.helpers.entity_platform = types.ModuleType("entity_platform")
-ha.exceptions = types.ModuleType("exceptions")
-
-# Basic attributes used in tts provider
-@dataclass
-class TTSAudioRequest:
-    language: str
-    options: dict
-    message_gen: AsyncGenerator[str]
-
-@dataclass
-class TTSAudioResponse:
-    extension: str
-    data_gen: AsyncGenerator[bytes]
-
-ha.components.tts.TTSAudioRequest = TTSAudioRequest
-ha.components.tts.TTSAudioResponse = TTSAudioResponse
-ha.components.tts.TextToSpeechEntity = object
-
-class HomeAssistantError(Exception):
-    pass
-ha.exceptions.HomeAssistantError = HomeAssistantError
-
-ha.config_entries.ConfigEntry = object
-ha.core.HomeAssistant = object
-ha.helpers.entity_platform.AddEntitiesCallback = object
-
-sys.modules["homeassistant"] = ha
-sys.modules["homeassistant.components"] = ha.components
-sys.modules["homeassistant.components.tts"] = ha.components.tts
-sys.modules["homeassistant.config_entries"] = ha.config_entries
-sys.modules["homeassistant.core"] = ha.core
-sys.modules["homeassistant.helpers"] = ha.helpers
-sys.modules["homeassistant.helpers.entity_platform"] = ha.helpers.entity_platform
-sys.modules["homeassistant.exceptions"] = ha.exceptions
-
 sys.path.insert(0, BASE_DIR)
 
 # Import after stubs are in place

@@ -1,46 +1,15 @@
 import os
 import sys
 import importlib
-import types
 
 import pytest
 
+sys.path.insert(0, os.path.dirname(__file__))
+from hass_stubs import install_homeassistant_stubs
+
+install_homeassistant_stubs()
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
-# Stub minimal Home Assistant modules required for import
-ha = types.ModuleType("homeassistant")
-ha.config_entries = types.ModuleType("config_entries")
-ha.core = types.ModuleType("core")
-ha.const = types.ModuleType("const")
-
-ha.config_entries.CONN_CLASS_CLOUD_POLL = "cloud_poll"
-ha.const.CONF_API_KEY = "api_key"
-
-
-class _BaseConfigFlow:
-    def __init_subclass__(cls, *args, domain=None, **kwargs):
-        super().__init_subclass__(*args, **kwargs)
-        cls.domain = domain
-
-    def async_show_form(self, **kwargs):
-        return kwargs
-
-    def async_create_entry(self, **kwargs):
-        self.created_entry = kwargs
-        return kwargs
-
-
-ha.config_entries.ConfigFlow = _BaseConfigFlow
-ha.config_entries.OptionsFlow = object
-ha.config_entries.ConfigEntry = object
-ha.core.HomeAssistant = object
-ha.core.callback = lambda func: func
-
-sys.modules.setdefault("homeassistant", ha)
-sys.modules.setdefault("homeassistant.config_entries", ha.config_entries)
-sys.modules.setdefault("homeassistant.core", ha.core)
-sys.modules.setdefault("homeassistant.const", ha.const)
-
 sys.path.insert(0, BASE_DIR)
 
 cfg_flow = importlib.import_module("custom_components.openai_gpt4o_tts.config_flow")
