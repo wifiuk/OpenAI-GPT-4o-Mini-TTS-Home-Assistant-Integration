@@ -16,7 +16,7 @@ It offers **high-quality, human-like speech** with **adjustable affect, tone, pr
 > **OpenAI Quote:**  
 > *"Hear and play with these voices in [OpenAI.fm](https://www.OpenAI.fm), our interactive demo for trying the latest text-to-speech model in the OpenAI API. Voices are currently optimized for English."*
 
-With **11 built-in voices**, you can customise **how speech is rendered** to match different scenarios.
+With **10 built-in voices**, you can customise **how speech is rendered** to match different scenarios.
 
 ---
 
@@ -24,7 +24,7 @@ With **11 built-in voices**, you can customise **how speech is rendered** to mat
 
 ✅ **Uses GPT-4o Mini TTS**, OpenAI’s latest speech model  
 ✅ **Fully UI-based setup**—no YAML required  
-✅ **11 voices** (`alloy`, `ash`, `ballad`, `coral`, `echo`, etc.)  
+✅ **10 voices** (`alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `onyx`, `nova`, `sage`, `shimmer`)
 ✅ **Customisable speech**—affect, tone, pronunciation, pauses, emotion  
 ✅ **Works with Home Assistant’s Assist**
 ✅ **Easily installable via HACS**
@@ -113,8 +113,8 @@ Once the repo is installed, follow these steps:
 You need an API key from OpenAI to use this integration. Get one from:  
 👉 [https://platform.openai.com/signup/](https://platform.openai.com/signup/)  
 
-### **What are the available voices?**  
-The integration supports the following **11 voices**:  alloy, ash, ballad, coral, echo, fable, onyx, nova, sage, shimmer
+### **What are the available voices?**
+The integration supports the following **10 voices**:  alloy, ash, ballad, coral, echo, fable, onyx, nova, sage, shimmer
 
 
 ### **Is this free to use?**  
