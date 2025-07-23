@@ -120,10 +120,10 @@ No, **OpenAI’s API is a paid service**. You are charged per character generate
 
 ---
 
-## 🔄 Recent Updates
+## 🔄 Recent Updates  
 
-✔️ **Streaming mode enabled for immediate playback**
----
+Streaming mode enabled for immediate playback  
+---  
 
 ## 🤝 Contributing  
 
