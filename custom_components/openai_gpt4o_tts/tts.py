@@ -1,12 +1,16 @@
 import logging
+from collections.abc import AsyncGenerator
 
 from homeassistant.components.tts import (
     ATTR_AUDIO_OUTPUT,
     ATTR_VOICE,
+    TTSAudioRequest,
+    TTSAudioResponse,
     TextToSpeechEntity,
     TtsAudioType,
     Voice,
 )
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -86,19 +90,29 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
         return audio_format, audio_data
 
     async def async_stream_tts_audio(
-        self, message: str, language: str, options: dict | None = None
-    ) -> TtsAudioType:
+        self, request: TTSAudioRequest
+    ) -> TTSAudioResponse:
         """Stream audio chunks as they are generated."""
-        if options is None:
-            options = {}
+        message = "".join([chunk async for chunk in request.message_gen])
+        options = dict(request.options or {})
+
         stream_format = options.get(CONF_STREAM_FORMAT, self._client.stream_format)
         if stream_format != "sse":
-            return await self.async_get_tts_audio(message, language, options)
+            ext, data = await self._client.get_tts_audio(message, options)
+            if not data or not ext:
+                raise HomeAssistantError(
+                    f"No TTS from {self.entity_id} for '{message}'"
+                )
 
-        audio_format, iterator = await self._client.stream_tts_audio(message, options)
-        if not iterator:
-            return None, None
-        return audio_format, iterator
+            async def gen() -> AsyncGenerator[bytes]:
+                yield data
+
+            return TTSAudioResponse(ext, gen())
+
+        ext, iterator = await self._client.stream_tts_audio(message, options)
+        if not iterator or not ext:
+            raise HomeAssistantError(f"No TTS from {self.entity_id} for '{message}'")
+        return TTSAudioResponse(ext, iterator)
 
     def async_get_supported_voices(self, language: str) -> list[Voice] | None:
         """Return known GPT‑4o voices for the voice dropdown."""
