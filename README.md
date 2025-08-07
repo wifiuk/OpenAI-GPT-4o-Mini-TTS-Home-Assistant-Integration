@@ -29,9 +29,10 @@ With **10 built-in voices**, you can customise **how speech is rendered** to mat
 ✅ **Works with Home Assistant’s Assist**  
 ✅ **Easily installable via HACS**  
 ✅ **Playback speed control for faster or slower speech**  
-✅ **Streaming audio for quicker responses**  
-✅ **Changes take effect immediately – no restart required**  
-✅ **Improved error handling and logging**  
+✅ **Streaming audio for quicker responses**
+✅ **Changes take effect immediately – no restart required**
+✅ **Improved error handling and logging**
+✅ **Volume gain control (0–2) applied locally**
 
 ---
 
@@ -77,7 +78,10 @@ Since this is a **custom repository**, you must add it manually:
 - **Model** (e.g., `gpt-4o-mini-tts`)
 - **Audio Format** (e.g., `mp3`, `wav`)
 - **Stream Format** – choose `sse` to stream audio while it is generated or `audio` to wait for the full file
-6. Click **Submit**. 🎉 Done!  
+- **Volume Gain** (0–2, default `1.0`, applied locally)
+6. Click **Submit**. 🎉 Done!
+
+> ⚠️ **Security:** API keys are stored in Home Assistant's secure vault and never hard-coded. Volume gain is processed locally.
 
 
 <img width="334" height="1045" alt="image" src="https://github.com/user-attachments/assets/fb6f147e-b016-4766-bcb9-f1ddeec87ffa" />

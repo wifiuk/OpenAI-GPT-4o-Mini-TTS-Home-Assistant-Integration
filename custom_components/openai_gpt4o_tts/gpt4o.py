@@ -3,10 +3,13 @@
 import asyncio
 import base64
 import binascii
+import io
 import json
 import logging
+import math
 import re
 from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
+from pydub import AudioSegment  # type: ignore[import]
 
 from .const import (
     CONF_INSTRUCTIONS,
@@ -15,11 +18,13 @@ from .const import (
     CONF_MODEL,
     CONF_AUDIO_OUTPUT,
     CONF_STREAM_FORMAT,
+    CONF_VOLUME_GAIN,
     DEFAULT_PLAYBACK_SPEED,
     DEFAULT_VOICE,
     DEFAULT_MODEL,
     DEFAULT_AUDIO_OUTPUT,
     DEFAULT_STREAM_FORMAT,
+    DEFAULT_VOLUME_GAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -74,14 +79,13 @@ class GPT4oClient:
                 entry.data.get(CONF_PLAYBACK_SPEED, DEFAULT_PLAYBACK_SPEED),
             )
         )
-        self._model = opts.get(
-            CONF_MODEL, entry.data.get(CONF_MODEL, DEFAULT_MODEL)
-        )
+        self._model = opts.get(CONF_MODEL, entry.data.get(CONF_MODEL, DEFAULT_MODEL))
         self._audio_output = opts.get(
             CONF_AUDIO_OUTPUT, entry.data.get(CONF_AUDIO_OUTPUT, DEFAULT_AUDIO_OUTPUT)
         )
         self._stream_format = opts.get(
-            CONF_STREAM_FORMAT, entry.data.get(CONF_STREAM_FORMAT, DEFAULT_STREAM_FORMAT)
+            CONF_STREAM_FORMAT,
+            entry.data.get(CONF_STREAM_FORMAT, DEFAULT_STREAM_FORMAT),
         )
 
     @property
@@ -181,8 +185,60 @@ class GPT4oClient:
             audio_chunks = [chunk async for chunk in self.iter_tts_audio(text, options)]
             if not audio_chunks:
                 return None, None
-            audio_format = options.get("audio_output", self._audio_output) if options else self._audio_output
-            return audio_format, b"".join(audio_chunks)
+            audio_format = (
+                options.get("audio_output", self._audio_output)
+                if options
+                else self._audio_output
+            )
+            audio_data = b"".join(audio_chunks)
+
+            volume_gain = DEFAULT_VOLUME_GAIN
+            if options:
+                raw_gain = options.get(CONF_VOLUME_GAIN, DEFAULT_VOLUME_GAIN)
+                try:
+                    volume_gain = float(raw_gain)
+                except (TypeError, ValueError):
+                    _LOGGER.warning(
+                        "Invalid volume_gain %s; using default %s",
+                        raw_gain,
+                        DEFAULT_VOLUME_GAIN,
+                    )
+                    volume_gain = DEFAULT_VOLUME_GAIN
+            if volume_gain < 0 or volume_gain > 2:
+                _LOGGER.warning(
+                    "volume_gain %s out of range 0-2; using default %s",
+                    volume_gain,
+                    DEFAULT_VOLUME_GAIN,
+                )
+                volume_gain = DEFAULT_VOLUME_GAIN
+
+            if volume_gain != DEFAULT_VOLUME_GAIN:
+                try:
+                    audio_segment = AudioSegment.from_file(
+                        io.BytesIO(audio_data), format=audio_format
+                    )
+                    if volume_gain == 0:
+                        audio_segment = audio_segment - 120
+                    else:
+                        headroom = -audio_segment.max_dBFS
+                        max_factor = (
+                            10 ** (headroom / 20) if headroom != float("inf") else 2
+                        ) * 0.9999
+                        applied = min(volume_gain, max_factor)
+                        if applied != volume_gain:
+                            _LOGGER.warning(
+                                "volume_gain %s clipped to %s", volume_gain, applied
+                            )
+                        audio_segment = audio_segment.apply_gain(
+                            20 * math.log10(applied)
+                        )
+                    buf = io.BytesIO()
+                    audio_segment.export(buf, format=audio_format)
+                    audio_data = buf.getvalue()
+                except Exception as err:  # pragma: no cover - unforeseen deps errors
+                    _LOGGER.error("Failed adjusting volume: %s", err)
+
+            return audio_format, audio_data
         except asyncio.TimeoutError:
             _LOGGER.error(
                 "GPT-4o TTS request timed out after %s seconds", REQUEST_TIMEOUT

@@ -10,13 +10,14 @@ from hass_stubs import install_homeassistant_stubs
 
 install_homeassistant_stubs()
 
-from homeassistant.components.tts import TTSAudioRequest, TTSAudioResponse
+from homeassistant.components.tts import TTSAudioRequest  # noqa: E402
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, BASE_DIR)
 
 # Import after stubs are in place
 tts_module = importlib.import_module("custom_components.openai_gpt4o_tts.tts")
+const = importlib.import_module("custom_components.openai_gpt4o_tts.const")
 
 
 class DummyEntry:
@@ -27,6 +28,7 @@ class DummyEntry:
 class DummyClient:
     def __init__(self, stream_format="audio"):
         self.stream_format = stream_format
+        self.audio_output = "mp3"
         self.called = []
 
     async def get_tts_audio(self, message, options=None):
@@ -35,9 +37,11 @@ class DummyClient:
 
     async def stream_tts_audio(self, message, options=None):
         self.called.append(("stream", message, options))
+
         async def gen():
             yield b"a"
             yield b"b"
+
         return "mp3", gen()
 
 
@@ -68,3 +72,9 @@ async def test_stream_method_sse():
     assert data == b"ab"
     assert client.called[0][0] == "stream"
 
+
+def test_default_and_supported_options():
+    client = DummyClient()
+    provider = tts_module.OpenAIGPT4oTTSProvider(DummyEntry(), client)
+    assert const.CONF_VOLUME_GAIN in provider.supported_options
+    assert provider.default_options[const.CONF_VOLUME_GAIN] == const.DEFAULT_VOLUME_GAIN
