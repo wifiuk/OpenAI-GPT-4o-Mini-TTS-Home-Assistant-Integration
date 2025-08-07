@@ -1,8 +1,11 @@
-import asyncio
+import audioop
+import io
+import math
 import os
+import struct
 import sys
 import importlib
-from types import SimpleNamespace
+import wave
 
 import pytest
 
@@ -110,6 +113,29 @@ class DummySSESession:
         return DummySSEResponse(self.lines)
 
 
+def _make_wav(amplitude: float = 0.7) -> bytes:
+    """Create a mono WAV with a sine wave at the given amplitude."""
+    frame_rate = 8000
+    duration = 0.01
+    frames = int(frame_rate * duration)
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(frame_rate)
+        for i in range(frames):
+            sample = int(32767 * amplitude * math.sin(2 * math.pi * i / frames))
+            wf.writeframes(struct.pack("<h", sample))
+    return buf.getvalue()
+
+
+def _max_sample(wav_bytes: bytes) -> int:
+    """Return maximum sample value from WAV bytes."""
+    with wave.open(io.BytesIO(wav_bytes)) as wf:
+        frames = wf.readframes(wf.getnframes())
+        return audioop.max(frames, wf.getsampwidth())
+
+
 @pytest.mark.asyncio
 async def test_instructions_default(monkeypatch):
     entry = DummyEntry(data={"api_key": "k"})
@@ -188,10 +214,71 @@ async def test_stream_tts_audio_generator(monkeypatch):
         lambda timeout=None: session,
     )
 
-    fmt, generator = await client.stream_tts_audio("hi", {gpt4o.CONF_STREAM_FORMAT: "sse"})
+    fmt, generator = await client.stream_tts_audio(
+        "hi", {gpt4o.CONF_STREAM_FORMAT: "sse"}
+    )
     assert fmt == "mp3"
     data = b"".join([chunk async for chunk in generator])
     assert data == b"data1data2"
+
+
+@pytest.mark.asyncio
+async def test_volume_gain_no_clipping(monkeypatch):
+    entry = DummyEntry(data={"api_key": "k"})
+    client = GPT4oClient(None, entry)
+    wav_bytes = _make_wav(0.7)
+
+    class WavContent:
+        async def iter_chunked(self, size):
+            yield wav_bytes
+
+    class WavResponse:
+        def __init__(self):
+            self.status = 200
+            self.content = WavContent()
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            pass
+
+        async def json(self):
+            return {}
+
+        async def text(self):
+            return ""
+
+    class WavSession:
+        def __init__(self):
+            self.payload = None
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            pass
+
+        def post(self, url, headers=None, json=None):
+            self.payload = json
+            return WavResponse()
+
+    monkeypatch.setattr(
+        "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
+        lambda timeout=None: WavSession(),
+    )
+
+    fmt, data = await client.get_tts_audio("hi", {gpt4o.CONF_AUDIO_OUTPUT: "wav"})
+    assert fmt == "wav"
+    assert data == wav_bytes
+
+    fmt, data = await client.get_tts_audio(
+        "hi",
+        {gpt4o.CONF_AUDIO_OUTPUT: "wav", gpt4o.CONF_VOLUME_GAIN: 2},
+    )
+    assert fmt == "wav"
+    assert _max_sample(data) <= 32767
+    assert _max_sample(data) > _max_sample(wav_bytes)
 
 
 class ErrorResponse:

@@ -12,6 +12,7 @@ CONF_PLAYBACK_SPEED = "playback_speed"
 CONF_MODEL = "model"
 CONF_AUDIO_OUTPUT = "audio_output"
 CONF_STREAM_FORMAT = "stream_format"
+CONF_VOLUME_GAIN = "volume_gain"
 
 # Default settings
 DEFAULT_VOICE = "sage"
@@ -20,6 +21,7 @@ DEFAULT_PLAYBACK_SPEED = 1.0
 DEFAULT_MODEL = "gpt-4o-mini-tts"
 DEFAULT_AUDIO_OUTPUT = "mp3"
 DEFAULT_STREAM_FORMAT = "audio"
+DEFAULT_VOLUME_GAIN = 1.0
 
 # Default multi-field instruction settings
 DEFAULT_AFFECT = (
