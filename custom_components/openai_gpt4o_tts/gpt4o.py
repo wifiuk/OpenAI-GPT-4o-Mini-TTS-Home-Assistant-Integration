@@ -9,12 +9,17 @@ import re
 from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
 
 from .const import (
+    CONF_PROVIDER,
+    CONF_AZURE_ENDPOINT,
     CONF_INSTRUCTIONS,
     CONF_PLAYBACK_SPEED,
     CONF_VOICE,
     CONF_MODEL,
     CONF_AUDIO_OUTPUT,
     CONF_STREAM_FORMAT,
+    PROVIDER_OPENAI,
+    PROVIDER_AZURE,
+    DEFAULT_PROVIDER,
     DEFAULT_PLAYBACK_SPEED,
     DEFAULT_VOICE,
     DEFAULT_MODEL,
@@ -59,8 +64,10 @@ class GPT4oClient:
         self.hass = hass
         self.entry = entry
 
-        # Always set your API key
+        # Get provider and API key
+        self._provider = entry.data.get(CONF_PROVIDER, DEFAULT_PROVIDER)
         self._api_key = entry.data["api_key"]
+        self._azure_endpoint = entry.data.get(CONF_AZURE_ENDPOINT, "")
 
         # Pull default voice/instructions from options first, then legacy data
         opts = getattr(entry, "options", {}) or {}
@@ -83,6 +90,24 @@ class GPT4oClient:
         self._stream_format = opts.get(
             CONF_STREAM_FORMAT, entry.data.get(CONF_STREAM_FORMAT, DEFAULT_STREAM_FORMAT)
         )
+
+    def _get_endpoint(self) -> str:
+        """Return the appropriate API endpoint based on provider."""
+        if self._provider == PROVIDER_AZURE:
+            return self._azure_endpoint
+        return OPENAI_TTS_ENDPOINT
+
+    def _get_headers(self) -> dict:
+        """Return the appropriate headers based on provider."""
+        if self._provider == PROVIDER_AZURE:
+            return {
+                "api-key": self._api_key,
+                "Content-Type": "application/json",
+            }
+        return {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+        }
 
     @property
     def stream_format(self) -> str:
@@ -143,10 +168,8 @@ class GPT4oClient:
         model = options.get(CONF_MODEL, self._model)
         stream_format = options.get(CONF_STREAM_FORMAT, self._stream_format)
 
-        headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json",
-        }
+        headers = self._get_headers()
+        endpoint = self._get_endpoint()
         payload = {
             "model": model,
             "voice": voice,
@@ -160,7 +183,7 @@ class GPT4oClient:
         timeout = ClientTimeout(total=REQUEST_TIMEOUT)
         async with ClientSession(timeout=timeout) as session:
             async with session.post(
-                OPENAI_TTS_ENDPOINT,
+                endpoint,
                 headers=headers,
                 json=payload,
             ) as resp:

@@ -7,9 +7,14 @@ from homeassistant.core import callback
 
 from .const import (
     DOMAIN,
+    CONF_PROVIDER,
+    CONF_AZURE_ENDPOINT,
     CONF_VOICE,
     CONF_INSTRUCTIONS,
     CONF_LANGUAGE,
+    PROVIDER_OPENAI,
+    PROVIDER_AZURE,
+    DEFAULT_PROVIDER,
     DEFAULT_VOICE,
     DEFAULT_LANGUAGE,
     DEFAULT_AFFECT,
@@ -46,6 +51,17 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = errors or {}
 
         if user_input is not None:
+            # Validate Azure endpoint if Azure provider is selected
+            provider = user_input.get(CONF_PROVIDER, DEFAULT_PROVIDER)
+            if provider == PROVIDER_AZURE:
+                azure_endpoint = user_input.get(CONF_AZURE_ENDPOINT, "").strip()
+                if not azure_endpoint:
+                    errors["azure_endpoint"] = "Azure endpoint URL is required"
+                    return await self.async_step_user(user_input, errors)
+                if not azure_endpoint.startswith("https://"):
+                    errors["azure_endpoint"] = "Azure endpoint must start with https://"
+                    return await self.async_step_user(user_input, errors)
+
             # Combine the user’s multi‑field instructions exactly as before
             affect = user_input.get("affect_personality", "")
             tone = user_input.get("tone", "")
@@ -69,7 +85,14 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             # Build data + options dicts
             api_key = user_input[CONF_API_KEY].strip()
-            data = {CONF_API_KEY: api_key}
+            data = {
+                CONF_API_KEY: api_key,
+                CONF_PROVIDER: provider,
+            }
+            
+            # Add Azure endpoint to data if Azure provider
+            if provider == PROVIDER_AZURE:
+                data[CONF_AZURE_ENDPOINT] = azure_endpoint
             options = {
                 CONF_VOICE: user_input.get(CONF_VOICE, DEFAULT_VOICE),
                 CONF_LANGUAGE: user_input.get(CONF_LANGUAGE, DEFAULT_LANGUAGE),
@@ -88,14 +111,19 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
 
             _LOGGER.debug("Creating entry with options: %s", options)
+            title = "Azure OpenAI GPT-4o TTS" if provider == PROVIDER_AZURE else "OpenAI GPT-4o TTS"
             return self.async_create_entry(
-                title="OpenAI GPT‑4o TTS", data=data, options=options
+                title=title, data=data, options=options
             )
 
         # Show the setup form
         data_schema = vol.Schema(
             {
+                vol.Required(CONF_PROVIDER, default=DEFAULT_PROVIDER): vol.In(
+                    {PROVIDER_OPENAI: "OpenAI", PROVIDER_AZURE: "Azure AI Foundry"}
+                ),
                 vol.Required(CONF_API_KEY): str,
+                vol.Optional(CONF_AZURE_ENDPOINT, default=""): str,
                 vol.Optional(CONF_VOICE, default=DEFAULT_VOICE): vol.In(
                     OPENAI_TTS_VOICES
                 ),
@@ -200,4 +228,3 @@ class OpenAIGPT4oOptionsFlowHandler(config_entries.OptionsFlow):
         )
 
         return self.async_show_form(step_id="init", data_schema=data_schema)
-
