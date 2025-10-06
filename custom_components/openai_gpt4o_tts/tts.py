@@ -26,6 +26,7 @@ from .const import (
     CONF_PLAYBACK_SPEED,
     CONF_MODEL,
     CONF_STREAM_FORMAT,
+    CONF_VOLUME_GAIN,
 )
 from .gpt4o import GPT4oClient
 
@@ -70,7 +71,10 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
     @property
     def default_options(self) -> dict:
         """Default TTS options, e.g. mp3."""
-        return {ATTR_AUDIO_OUTPUT: self._client.audio_output}
+        return {
+            ATTR_AUDIO_OUTPUT: self._client.audio_output,
+            CONF_VOLUME_GAIN: self._client.volume_gain,
+        }
 
     @property
     def supported_options(self) -> list[str]:
@@ -82,6 +86,7 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
             CONF_PLAYBACK_SPEED,
             CONF_MODEL,
             CONF_STREAM_FORMAT,
+            CONF_VOLUME_GAIN,
         ]
 
     async def async_get_tts_audio(

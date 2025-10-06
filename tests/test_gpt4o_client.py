@@ -2,9 +2,8 @@ import asyncio
 import os
 import sys
 import importlib
-from types import SimpleNamespace
-
 import pytest
+import struct
 
 sys.path.insert(0, os.path.dirname(__file__))
 from hass_stubs import install_homeassistant_stubs
@@ -241,3 +240,26 @@ async def test_log_api_error_masks_api_key_text(caplog, key):
         await gpt4o._log_api_error(resp)
     assert key not in caplog.text
     assert "sk-***" in caplog.text
+
+
+def test_volume_gain_clamped_from_entry():
+    entry = DummyEntry(
+        data={"api_key": "k"}, options={gpt4o.CONF_VOLUME_GAIN: 10.0}
+    )
+    client = GPT4oClient(None, entry)
+    assert client.volume_gain == gpt4o.VOLUME_GAIN_MAX
+
+
+def test_apply_volume_gain_pcm():
+    entry = DummyEntry(data={"api_key": "k"})
+    client = GPT4oClient(None, entry)
+    pcm = struct.pack("<hh", 1000, -1000)
+    boosted = client._apply_volume_gain("pcm", pcm, 2.0)
+    assert struct.unpack("<hh", boosted) == (2000, -2000)
+
+
+def test_resolve_volume_gain_override_clamped():
+    entry = DummyEntry(data={"api_key": "k"})
+    client = GPT4oClient(None, entry)
+    gain = client._resolve_volume_gain({gpt4o.CONF_VOLUME_GAIN: 0.05})
+    assert gain == gpt4o.VOLUME_GAIN_MIN

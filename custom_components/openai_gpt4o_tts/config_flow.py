@@ -35,6 +35,10 @@ from .const import (
     DEFAULT_MODEL,
     DEFAULT_AUDIO_OUTPUT,
     DEFAULT_STREAM_FORMAT,
+    CONF_VOLUME_GAIN,
+    DEFAULT_VOLUME_GAIN,
+    VOLUME_GAIN_MIN,
+    VOLUME_GAIN_MAX,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -112,6 +116,9 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_PLAYBACK_SPEED, default=DEFAULT_PLAYBACK_SPEED): vol.All(
                 vol.Coerce(float), vol.Range(min=0.25, max=4.0)
             ),
+            vol.Optional(CONF_VOLUME_GAIN, default=DEFAULT_VOLUME_GAIN): vol.All(
+                vol.Coerce(float), vol.Range(min=VOLUME_GAIN_MIN, max=VOLUME_GAIN_MAX)
+            ),
             vol.Optional("affect_personality", default=DEFAULT_AFFECT): vol.All(
                 str, vol.Length(min=5, max=500)
             ),
@@ -179,6 +186,9 @@ class OpenAIGPT4oConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_PLAYBACK_SPEED: float(
                 user_input.get(CONF_PLAYBACK_SPEED, DEFAULT_PLAYBACK_SPEED)
             ),
+            CONF_VOLUME_GAIN: float(
+                user_input.get(CONF_VOLUME_GAIN, DEFAULT_VOLUME_GAIN)
+            ),
             "affect_personality": affect,
             "tone": tone,
             "pronunciation": pron,
@@ -234,6 +244,13 @@ class OpenAIGPT4oOptionsFlowHandler(config_entries.OptionsFlow):
                     CONF_PLAYBACK_SPEED,
                     default=existing.get(CONF_PLAYBACK_SPEED, DEFAULT_PLAYBACK_SPEED),
                 ): vol.All(vol.Coerce(float), vol.Range(min=0.25, max=4.0)),
+                vol.Optional(
+                    CONF_VOLUME_GAIN,
+                    default=existing.get(CONF_VOLUME_GAIN, DEFAULT_VOLUME_GAIN),
+                ): vol.All(
+                    vol.Coerce(float),
+                    vol.Range(min=VOLUME_GAIN_MIN, max=VOLUME_GAIN_MAX),
+                ),
                 vol.Optional(
                     "affect_personality",
                     default=existing.get("affect_personality", DEFAULT_AFFECT),
