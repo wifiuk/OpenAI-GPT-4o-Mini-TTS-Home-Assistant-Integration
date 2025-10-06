@@ -1,15 +1,15 @@
 {
-  "domain": "openai_gpt4o_tts",
-  "name": "OpenAI GPT-4o Mini TTS",
-  "version": "1.0.9",
-  "author": "wifiuk",
-  "documentation": "https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration",
-  "requirements": [
-    "aiohttp>=3.9.3"
-  ],
-  "codeowners": [
-    "@wifiuk"
-  ],
-  "iot_class": "cloud_polling",
-  "config_flow": true
+    "domain": "openai_gpt4o_tts",
+    "name": "OpenAI GPT-4o Mini TTS",
+    "version": "1.0.9",
+    "author": "wifiuk",
+    "documentation": "https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration",
+    "requirements": [
+        "aiohttp>=3.9.3"
+    ],
+    "codeowners": [
+        "@wifiuk"
+    ],
+    "iot_class": "cloud_polling",
+    "config_flow": true
 }

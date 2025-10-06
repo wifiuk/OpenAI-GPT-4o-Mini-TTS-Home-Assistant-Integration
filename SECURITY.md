@@ -1,13 +1,12 @@
 # Security Notes
 
-- **Secrets**: API keys are stored by Home Assistant's secret storage. The integration masks tokens in logs to limit exposure (OWASP A3:2021 Sensitive Data Exposure).
-- **Transport**: Only HTTPS endpoints are accepted. Client requests enforce a 30s timeout and never shell out, reducing injection and SSRF risk (OWASP A5:2021 Security Misconfiguration, A10:2021 Server-Side Request Forgery).
-- **Input validation**: Configuration schemas restrict provider, voice, model, audio format, playback speed, and volume gain. Gain is clamped to `0.1–3.0` at runtime to avoid clipping or harmful playback (OWASP A4:2021 Insecure Design).
-- **Output handling**: Audio returned from providers is normalised to binary and sanitized before being passed to ffmpeg, preventing malformed base64 payloads from propagating downstream (OWASP A1:2021 Broken Access Control via injection vectors).
-- **Streaming safety**: Server-Sent Events are decoded with strict UTF-8 handling and a 1 MB rolling buffer cap, dropping malformed chunks to mitigate connection resets or memory exhaustion (OWASP A6:2021 Vulnerable and Outdated Components / A8:2021 Software and Data Integrity Failures).
-- **Dependencies**: Optional FFmpeg/pydub components must be maintained by the operator to avoid vulnerable codecs (OWASP A6:2021 Vulnerable and Outdated Components).
+- **OWASP A02:2021 – Cryptographic Failures**: Secrets (OpenAI API keys) are stored by Home Assistant and only referenced via the config entry. Keys are masked before logging using `_mask_api_keys`.
+- **OWASP A05:2021 – Security Misconfiguration**: All outbound requests enforce HTTPS, a 30s timeout, and never shell out to the host. The integration offers no YAML templating or dynamic code execution.
+- **OWASP A10:2021 – Server-Side Request Forgery**: The integration sends traffic exclusively to `https://api.openai.com/v1/audio/speech`; no user-provided URLs are accepted.
+- **Input validation**: Config schemas allow-list voice, model, audio, and stream formats and coerce playback speed into `0.25–4.0`. Instructions fields are length-limited (5–500 chars).
+- **Output handling**: SSE streams and base64 payloads are decoded with error handling, and unexpected data is ignored with a warning to avoid poisoning downstream FFmpeg pipelines.
 
 ## Assumptions & Risks
-- Home Assistant provides authentication, rate limiting, and protects the `/api/tts_proxy` endpoint from abuse.
-- API credentials are provisioned with the minimum scope required and rotated by the operator.
-- Outbound connectivity to OpenAI/Azure is available; transient failures result in log warnings and no cached audio.
+- Home Assistant provides authentication, rate limiting, and protects `tts_proxy` endpoints from anonymous access.
+- Operators rotate API keys and enforce least privilege on their OpenAI accounts.
+- Network interruptions return empty audio and log sanitized errors; no retry or caching is implemented.

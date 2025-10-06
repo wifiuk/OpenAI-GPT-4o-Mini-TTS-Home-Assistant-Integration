@@ -1,9 +1,8 @@
+import importlib
 import os
 import sys
-import importlib
 
 import pytest
-import voluptuous as vol
 
 sys.path.insert(0, os.path.dirname(__file__))
 from hass_stubs import install_homeassistant_stubs
@@ -65,26 +64,13 @@ class DummySession:
         return DummyResponse()
 
 
-async def _start_flow(flow: OpenAIGPT4oConfigFlow):
-    await flow.async_step_user({gpt4o.CONF_PROVIDER: gpt4o.DEFAULT_PROVIDER})
-
-
 @pytest.mark.asyncio
-async def test_volume_gain_persisted_and_trimmed_api_key(monkeypatch):
+async def test_api_key_whitespace(monkeypatch):
     flow = OpenAIGPT4oConfigFlow()
-    await _start_flow(flow)
-
-    result = await flow.async_step_configure(
-        {
-            "api_key": "  k  ",
-            gpt4o.CONF_VOLUME_GAIN: 1.5,
-        }
-    )
-
+    result = await flow.async_step_user({"api_key": "  k  "})
     assert result["data"]["api_key"] == "k"
-    assert pytest.approx(result["options"][gpt4o.CONF_VOLUME_GAIN]) == 1.5
 
-    entry = DummyEntry(data=result["data"], options=result["options"])
+    entry = DummyEntry(data=result["data"])
     client = GPT4oClient(None, entry)
 
     dummy = DummySession()
@@ -94,7 +80,7 @@ async def test_volume_gain_persisted_and_trimmed_api_key(monkeypatch):
     )
 
     fmt, data = await client.get_tts_audio("hi")
-    assert fmt == result["options"][gpt4o.CONF_AUDIO_OUTPUT]
+    assert fmt == "mp3"
     assert dummy.headers["Authorization"] == "Bearer k"
     assert dummy.payload["model"] == gpt4o.DEFAULT_MODEL
     assert dummy.payload["response_format"] == gpt4o.DEFAULT_AUDIO_OUTPUT
@@ -102,27 +88,9 @@ async def test_volume_gain_persisted_and_trimmed_api_key(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_volume_gain_schema_bounds():
-    flow = OpenAIGPT4oConfigFlow()
-    await _start_flow(flow)
-    form = await flow.async_step_configure()
-    schema = form["data_schema"]
-
-    with pytest.raises(vol.Invalid):
-        schema({"api_key": "k", gpt4o.CONF_VOLUME_GAIN: 0.05})
-
-    with pytest.raises(vol.Invalid):
-        schema({"api_key": "k", gpt4o.CONF_VOLUME_GAIN: 5.0})
-
-
-@pytest.mark.asyncio
 async def test_stream_format_option():
     flow = OpenAIGPT4oConfigFlow()
-    await _start_flow(flow)
-    result = await flow.async_step_configure(
-        {
-            "api_key": "k",
-            gpt4o.CONF_STREAM_FORMAT: "sse",
-        }
+    result = await flow.async_step_user(
+        {"api_key": "k", gpt4o.CONF_STREAM_FORMAT: "sse"}
     )
     assert result["options"][gpt4o.CONF_STREAM_FORMAT] == "sse"
