@@ -68,22 +68,18 @@ class DummySession:
 
 
 class DummySSEContent:
-    def __init__(self, lines):
-        self.lines = lines
+    def __init__(self, chunks):
+        self._chunks = chunks
 
-    def __aiter__(self):
-        async def gen():
-            for line in self.lines:
-                for part in line.split(b"\n"):
-                    yield (part + b"\n") if part else b"\n"
-
-        return gen()
+    async def iter_chunked(self, size):  # noqa: ARG002 - size unused in stub
+        for chunk in self._chunks:
+            yield chunk
 
 
 class DummySSEResponse:
-    def __init__(self, lines):
+    def __init__(self, chunks):
         self.status = 200
-        self.content = DummySSEContent(lines)
+        self.content = DummySSEContent(chunks)
 
     async def __aenter__(self):
         return self
@@ -99,9 +95,9 @@ class DummySSEResponse:
 
 
 class DummySSESession:
-    def __init__(self, lines):
+    def __init__(self, chunks):
         self.payload = None
-        self.lines = lines
+        self._chunks = chunks
 
     async def __aenter__(self):
         return self
@@ -111,7 +107,7 @@ class DummySSESession:
 
     def post(self, url, headers=None, json=None):
         self.payload = json
-        return DummySSEResponse(self.lines)
+        return DummySSEResponse(self._chunks)
 
 
 @pytest.mark.asyncio
@@ -139,12 +135,13 @@ async def test_sse_stream(monkeypatch):
     entry = DummyEntry(data={"api_key": "k"})
     client = GPT4oClient(None, entry)
 
-    lines = [
-        b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTE="}\n\n',
+    chunks = [
+        b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTE="}\n',
+        b'\n',
         b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTI="}\n\n',
         b'data: {"type": "speech.audio.done"}\n\n',
     ]
-    session = DummySSESession(lines)
+    session = DummySSESession(chunks)
     monkeypatch.setattr(
         "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
         lambda timeout=None: session,
@@ -179,12 +176,13 @@ async def test_default_stream_from_entry(monkeypatch):
     entry = DummyEntry(data={"api_key": "k"}, options={gpt4o.CONF_STREAM_FORMAT: "sse"})
     client = GPT4oClient(None, entry)
 
-    lines = [
+    chunks = [
         b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTE="}\n\n',
-        b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTI="}\n\n',
+        b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTI="}\n',
+        b'\n',
         b'data: {"type": "speech.audio.done"}\n\n',
     ]
-    session = DummySSESession(lines)
+    session = DummySSESession(chunks)
     monkeypatch.setattr(
         "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
         lambda timeout=None: session,
@@ -200,12 +198,12 @@ async def test_stream_tts_audio_generator(monkeypatch):
     entry = DummyEntry(data={"api_key": "k"})
     client = GPT4oClient(None, entry)
 
-    lines = [
+    chunks = [
         b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTE="}\n\n',
         b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTI="}\n\n',
         b'data: {"type": "speech.audio.done"}\n\n',
     ]
-    session = DummySSESession(lines)
+    session = DummySSESession(chunks)
     monkeypatch.setattr(
         "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
         lambda timeout=None: session,
@@ -215,6 +213,27 @@ async def test_stream_tts_audio_generator(monkeypatch):
     assert fmt == "mp3"
     data = b"".join([chunk async for chunk in generator])
     assert data == b"data1data2"
+
+
+@pytest.mark.asyncio
+async def test_sse_handles_split_data_prefix(monkeypatch):
+    entry = DummyEntry(data={"api_key": "k"})
+    client = GPT4oClient(None, entry)
+
+    chunks = [
+        b"da",
+        b'ta: {"type": "speech.audio.delta", "audio": "ZGF0YTE="}\n\n',
+        b'data: {"type": "speech.audio.done"}\n\n',
+    ]
+    session = DummySSESession(chunks)
+    monkeypatch.setattr(
+        "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
+        lambda timeout=None: session,
+    )
+
+    fmt, data = await client.get_tts_audio("hi", {gpt4o.CONF_STREAM_FORMAT: "sse"})
+    assert fmt == "mp3"
+    assert data == b"data1"
 
 
 class ErrorResponse:

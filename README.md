@@ -40,6 +40,7 @@ pytest
 - API keys are stored by Home Assistant and masked in logs.
 - All outbound calls enforce HTTPS endpoints, 30s client timeout, and no shell commands are executed.
 - PCM responses are decoded from base64 before streaming to avoid feeding invalid data into ffmpeg pipelines.
+- Streaming responses validate UTF-8 SSE chunks and bound buffering to 1 MB to avoid connection resets and resource exhaustion.
 
 ## Limitations
 - Network access to OpenAI/Azure is required; the integration does not cache audio.
