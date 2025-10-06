@@ -17,16 +17,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     DOMAIN,
-    CONF_PROVIDER,
-    PROVIDER_AZURE,
-    DEFAULT_PROVIDER,
     OPENAI_TTS_VOICES,
     SUPPORTED_LANGUAGES,
     DEFAULT_LANGUAGE,
     CONF_PLAYBACK_SPEED,
     CONF_MODEL,
     CONF_STREAM_FORMAT,
-    CONF_VOLUME_GAIN,
 )
 from .gpt4o import GPT4oClient
 
@@ -49,8 +45,7 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
     def __init__(self, config_entry: ConfigEntry, client: GPT4oClient) -> None:
         self._config_entry = config_entry
         self._client = client
-        provider = config_entry.data.get(CONF_PROVIDER, DEFAULT_PROVIDER)
-        self._name = "Azure OpenAI GPT-4o Mini TTS" if provider == PROVIDER_AZURE else "OpenAI GPT-4o Mini TTS"
+        self._name = "OpenAI GPT‑4o Mini TTS"
         self._attr_unique_id = f"{config_entry.entry_id}-tts"
 
     @property
@@ -71,10 +66,7 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
     @property
     def default_options(self) -> dict:
         """Default TTS options, e.g. mp3."""
-        return {
-            ATTR_AUDIO_OUTPUT: self._client.audio_output,
-            CONF_VOLUME_GAIN: self._client.volume_gain,
-        }
+        return {ATTR_AUDIO_OUTPUT: self._client.audio_output}
 
     @property
     def supported_options(self) -> list[str]:
@@ -86,7 +78,6 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
             CONF_PLAYBACK_SPEED,
             CONF_MODEL,
             CONF_STREAM_FORMAT,
-            CONF_VOLUME_GAIN,
         ]
 
     async def async_get_tts_audio(
@@ -131,3 +122,4 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
     def extra_state_attributes(self) -> dict:
         """Optional: expose provider name or debug info."""
         return {"provider": self._name}
+

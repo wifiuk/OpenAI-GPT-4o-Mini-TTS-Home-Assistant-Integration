@@ -5,8 +5,6 @@ PLATFORMS = ["tts"]
 
 # Configuration keys
 CONF_API_KEY = "api_key"
-CONF_PROVIDER = "provider"
-CONF_AZURE_ENDPOINT = "azure_endpoint"
 CONF_VOICE = "voice"
 CONF_INSTRUCTIONS = "instructions"
 CONF_LANGUAGE = "language"
@@ -14,25 +12,14 @@ CONF_PLAYBACK_SPEED = "playback_speed"
 CONF_MODEL = "model"
 CONF_AUDIO_OUTPUT = "audio_output"
 CONF_STREAM_FORMAT = "stream_format"
-CONF_VOLUME_GAIN = "volume_gain"
-
-# Provider options
-PROVIDER_OPENAI = "openai"
-PROVIDER_AZURE = "azure"
 
 # Default settings
-DEFAULT_PROVIDER = PROVIDER_OPENAI
 DEFAULT_VOICE = "sage"
 DEFAULT_LANGUAGE = "en"
 DEFAULT_PLAYBACK_SPEED = 1.0
 DEFAULT_MODEL = "gpt-4o-mini-tts"
 DEFAULT_AUDIO_OUTPUT = "mp3"
 DEFAULT_STREAM_FORMAT = "audio"
-DEFAULT_VOLUME_GAIN = 1.0
-
-# Safe volume gain multiplier range (protects listeners and clipping)
-VOLUME_GAIN_MIN = 0.1
-VOLUME_GAIN_MAX = 3.0
 
 # Default multi-field instruction settings
 DEFAULT_AFFECT = (
