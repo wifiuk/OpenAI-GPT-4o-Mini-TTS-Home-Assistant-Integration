@@ -56,6 +56,11 @@ _API_KEY_RE = re.compile(r"sk-[A-Za-z0-9-]{16,}")
 # (OWASP A5:2021 – Security Misconfiguration).
 _BASE64_BYTES_RE = re.compile(rb"^[A-Za-z0-9+/=\r\n]+$")
 
+# Maximum amount of buffered SSE text we will accumulate before resetting to
+# avoid unbounded growth if the provider misbehaves (OWASP A7:2021 –
+# Identification and Authentication Failures -> resource exhaustion).
+_MAX_SSE_BUFFER_BYTES = 1_000_000
+
 try:  # pragma: no cover - optional dependency
     from pydub import AudioSegment
 except ImportError:  # pragma: no cover - optional dependency
@@ -165,42 +170,91 @@ class GPT4oClient:
         return self._stream_format
 
     async def _iter_sse_audio(self, resp: ClientResponse):
-        """Yield audio bytes from an SSE response."""
-        buffer = ""
-        async for raw in resp.content:
-            line = raw.decode("utf-8")
-            if line.startswith("data:"):
-                data_part = line[5:].strip()
-                if data_part == "[DONE]":
-                    break
-                buffer += data_part
-            elif line.strip() == "":
-                if not buffer:
-                    continue
-                try:
-                    event = json.loads(buffer)
-                except json.JSONDecodeError:
-                    buffer = ""
-                    continue
-                buffer = ""
-                if event.get("type") == "speech.audio.delta":
-                    audio_b64 = event.get("audio", "")
-                    if audio_b64:
-                        try:
-                            yield base64.b64decode(audio_b64)
-                        except (binascii.Error, ValueError):
-                            _LOGGER.warning("Invalid audio chunk in SSE stream")
-                elif event.get("type") == "speech.audio.done":
-                    break
-        if buffer:
+        """Yield audio bytes from an SSE response with robust framing."""
+
+        def _flush_event(payload: str) -> Optional[dict]:
+            data = payload.strip()
+            if not data:
+                return None
+            if data == "[DONE]":
+                return {"type": "speech.audio.done"}
             try:
-                event = json.loads(buffer)
-                if event.get("type") == "speech.audio.delta":
-                    audio_b64 = event.get("audio", "")
-                    if audio_b64:
-                        yield base64.b64decode(audio_b64)
+                return json.loads(data)
             except json.JSONDecodeError:
-                pass
+                sanitized = _mask_api_keys(data[:128])
+                _LOGGER.debug("Discarding invalid SSE payload prefix: %s", sanitized)
+                return None
+
+        buffer = ""
+        data_lines: list[str] = []
+
+        async for raw in resp.content.iter_chunked(1024):
+            if not raw:
+                continue
+            try:
+                chunk = raw.decode("utf-8")
+            except UnicodeDecodeError:
+                _LOGGER.warning("Non UTF-8 data in SSE stream; dropping chunk")
+                continue
+
+            buffer += chunk
+            if len(buffer) > _MAX_SSE_BUFFER_BYTES:
+                _LOGGER.warning(
+                    "SSE buffer exceeded %s bytes; resetting to avoid exhaustion",
+                    _MAX_SSE_BUFFER_BYTES,
+                )
+                buffer = ""
+                data_lines.clear()
+                continue
+
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+                line = line.rstrip("\r")
+
+                if not line:
+                    if not data_lines:
+                        continue
+                    event = _flush_event("\n".join(data_lines))
+                    data_lines.clear()
+                    if not event:
+                        continue
+                    event_type = event.get("type")
+                    if event_type == "speech.audio.delta":
+                        audio_b64 = event.get("audio", "")
+                        if isinstance(audio_b64, str) and audio_b64:
+                            try:
+                                yield base64.b64decode(audio_b64, validate=True)
+                            except (binascii.Error, ValueError):
+                                _LOGGER.warning("Invalid audio chunk in SSE stream")
+                    if event_type == "speech.audio.done":
+                        return
+                    continue
+
+                if line.startswith(":"):
+                    continue  # comment/heartbeat per SSE spec
+
+                if line.startswith("data:"):
+                    data_line = line[5:]
+                    if data_line.startswith(" "):
+                        data_line = data_line[1:]
+                    data_lines.append(data_line)
+                    continue
+
+                # Ignore other SSE fields we do not rely on for now
+
+        if data_lines:
+            event = _flush_event("\n".join(data_lines))
+            if not event:
+                return
+            if event.get("type") == "speech.audio.delta":
+                audio_b64 = event.get("audio", "")
+                if isinstance(audio_b64, str) and audio_b64:
+                    try:
+                        yield base64.b64decode(audio_b64, validate=True)
+                    except (binascii.Error, ValueError):
+                        _LOGGER.warning("Invalid audio chunk in trailing SSE payload")
+            if event.get("type") == "speech.audio.done":
+                return
 
     @property
     def audio_output(self) -> str:
