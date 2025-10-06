@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import os
 import sys
 import importlib
@@ -25,14 +26,17 @@ class DummyEntry:
 
 
 class DummyContent:
+    def __init__(self, payload: bytes):
+        self._payload = payload
+
     async def iter_chunked(self, size):
-        yield b"audio"
+        yield self._payload
 
 
 class DummyResponse:
-    def __init__(self):
+    def __init__(self, payload: bytes = b"audio"):
         self.status = 200
-        self.content = DummyContent()
+        self.content = DummyContent(payload)
 
     async def __aenter__(self):
         return self
@@ -48,8 +52,9 @@ class DummyResponse:
 
 
 class DummySession:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, payload: bytes = b"audio", **kwargs):
         self.payload = None
+        self._payload = payload
 
     async def __aenter__(self):
         return self
@@ -59,7 +64,7 @@ class DummySession:
 
     def post(self, url, headers=None, json=None):
         self.payload = json
-        return DummyResponse()
+        return DummyResponse(self._payload)
 
 
 class DummySSEContent:
@@ -148,6 +153,25 @@ async def test_sse_stream(monkeypatch):
     fmt, data = await client.get_tts_audio("hi", {gpt4o.CONF_STREAM_FORMAT: "sse"})
     assert fmt == "mp3"
     assert data == b"data1data2"
+
+
+@pytest.mark.asyncio
+async def test_pcm_base64_is_decoded(monkeypatch):
+    entry = DummyEntry(data={"api_key": "k"})
+    client = GPT4oClient(None, entry)
+
+    pcm_bytes = b"\x01\x02\x03\x04"
+    payload = base64.b64encode(pcm_bytes)
+
+    dummy = DummySession(payload=payload)
+    monkeypatch.setattr(
+        "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
+        lambda timeout=None: dummy,
+    )
+
+    fmt, data = await client.get_tts_audio("hello", {gpt4o.CONF_AUDIO_OUTPUT: "pcm"})
+    assert fmt == "pcm"
+    assert data == pcm_bytes
 
 
 @pytest.mark.asyncio

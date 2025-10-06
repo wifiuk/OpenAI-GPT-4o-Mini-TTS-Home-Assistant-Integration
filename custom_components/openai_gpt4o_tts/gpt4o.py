@@ -50,6 +50,12 @@ OPENAI_TTS_ENDPOINT = "https://api.openai.com/v1/audio/speech"
 # character set and require a reasonable length to avoid false positives.
 _API_KEY_RE = re.compile(r"sk-[A-Za-z0-9-]{16,}")
 
+# Allow-list of characters that appear in base64 payloads so we can
+# differentiate real binary audio (which often contains NULL bytes) from a
+# JSON/base64 encoded string. This guards against feeding ffmpeg invalid data
+# (OWASP A5:2021 – Security Misconfiguration).
+_BASE64_BYTES_RE = re.compile(rb"^[A-Za-z0-9+/=\r\n]+$")
+
 try:  # pragma: no cover - optional dependency
     from pydub import AudioSegment
 except ImportError:  # pragma: no cover - optional dependency
@@ -59,6 +65,31 @@ except ImportError:  # pragma: no cover - optional dependency
 def _mask_api_keys(text: str) -> str:
     """Return ``text`` with API keys masked."""
     return _API_KEY_RE.sub("sk-***", text)
+
+
+def _maybe_decode_base64_bytes(data: bytes) -> Optional[bytes]:
+    """Return decoded bytes when ``data`` looks like base64, else ``None``."""
+
+    if not data:
+        return None
+
+    sample = data.strip()
+    if not sample or len(sample) < 8:  # too small to be meaningful audio
+        return None
+
+    if not _BASE64_BYTES_RE.fullmatch(sample):
+        return None
+
+    try:
+        decoded = base64.b64decode(sample, validate=True)
+    except (binascii.Error, ValueError):
+        return None
+
+    # Guard against decoding plain ASCII speech which would expand in size.
+    if not decoded or len(decoded) >= len(sample):
+        return None
+
+    return decoded
 
 
 async def _log_api_error(resp: ClientResponse) -> None:
@@ -281,6 +312,44 @@ class GPT4oClient:
 
         return audio_bytes
 
+    def _extract_audio_bytes(self, audio_format: str, audio_bytes: bytes) -> bytes:
+        """Return binary audio, decoding base64/JSON payloads when necessary."""
+
+        if not audio_bytes:
+            return audio_bytes
+
+        fmt = (audio_format or "").lower()
+
+        # Some providers wrap PCM data in base64; decode it safely before
+        # handing to Home Assistant to avoid ffmpeg failures downstream.
+        if fmt == "pcm":
+            decoded = _maybe_decode_base64_bytes(audio_bytes)
+            if decoded is not None:
+                return decoded
+
+        # Defensive: occasionally Azure responses may contain JSON with a
+        # base64 encoded payload. Detect and decode so we only ever return
+        # binary audio.
+        try:
+            text_payload = audio_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            return audio_bytes
+
+        try:
+            parsed = json.loads(text_payload)
+        except json.JSONDecodeError:
+            return audio_bytes
+
+        if isinstance(parsed, dict):
+            for key in ("audio", "data", "value"):
+                candidate = parsed.get(key)
+                if isinstance(candidate, str):
+                    decoded = _maybe_decode_base64_bytes(candidate.encode("utf-8"))
+                    if decoded is not None:
+                        return decoded
+
+        return audio_bytes
+
     async def iter_tts_audio(self, text: str, options: dict | None = None):
         """Asynchronously yield audio chunks from the API."""
         if options is None:
@@ -333,7 +402,8 @@ class GPT4oClient:
                 return None, None
             audio_format = options.get("audio_output", self._audio_output)
             gain = self._resolve_volume_gain(options)
-            audio_bytes = b"".join(audio_chunks)
+            joined = b"".join(audio_chunks)
+            audio_bytes = self._extract_audio_bytes(audio_format, joined)
             return audio_format, self._apply_volume_gain(audio_format, audio_bytes, gain)
         except asyncio.TimeoutError:
             _LOGGER.error(
