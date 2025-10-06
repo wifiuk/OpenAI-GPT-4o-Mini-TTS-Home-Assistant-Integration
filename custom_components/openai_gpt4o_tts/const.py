@@ -5,6 +5,8 @@ PLATFORMS = ["tts"]
 
 # Configuration keys
 CONF_API_KEY = "api_key"
+CONF_PROVIDER = "provider"
+CONF_AZURE_ENDPOINT = "azure_endpoint"
 CONF_VOICE = "voice"
 CONF_INSTRUCTIONS = "instructions"
 CONF_LANGUAGE = "language"
@@ -13,7 +15,12 @@ CONF_MODEL = "model"
 CONF_AUDIO_OUTPUT = "audio_output"
 CONF_STREAM_FORMAT = "stream_format"
 
+# Provider options
+PROVIDER_OPENAI = "openai"
+PROVIDER_AZURE = "azure"
+
 # Default settings
+DEFAULT_PROVIDER = PROVIDER_OPENAI
 DEFAULT_VOICE = "sage"
 DEFAULT_LANGUAGE = "en"
 DEFAULT_PLAYBACK_SPEED = 1.0

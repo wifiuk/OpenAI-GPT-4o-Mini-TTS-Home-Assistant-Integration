@@ -22,16 +22,17 @@ With **10 built-in voices**, you can customise **how speech is rendered** to mat
 
 ## 🚀 Features  
 
-✅ **Uses GPT-4o Mini TTS**, OpenAI’s latest speech model  
+✅ **Dual Provider Support**: Works with both **OpenAI** and **Azure AI Foundry**  
+✅ **Uses GPT-4o Mini TTS**, OpenAI's latest speech model  
 ✅ **Fully UI-based setup**—no YAML required  
 ✅ **10 voices** (`alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `onyx`, `nova`, `sage`, `shimmer`)  
 ✅ **Customisable speech**—affect, tone, pronunciation, pauses, emotion  
-✅ **Works with Home Assistant’s Assist**  
+✅ **Works with Home Assistant's Assist**  
 ✅ **Easily installable via HACS**  
 ✅ **Playback speed control for faster or slower speech**  
 ✅ **Streaming audio for quicker responses**  
 ✅ **Changes take effect immediately – no restart required**  
-✅ **Improved error handling and logging**  
+✅ **Improved error handling and logging**
 
 ---
 
@@ -63,11 +64,38 @@ Since this is a **custom repository**, you must add it manually:
 
 ## 🛠️ Setup & Configuration  
 
+### Provider Selection
+
+During setup, you can choose between two providers:
+- **OpenAI**: Use OpenAI's public API
+- **Azure AI Foundry**: Use Azure's OpenAI service
+
+### OpenAI Setup
+
 1. **Go to:** Settings → Devices & Services → Integrations.  
-2. **Click “+ Add Integration”** → Select **OpenAI GPT-4o Mini TTS**.  
-3. **Enter your OpenAI API Key.**  
-4. **Choose a Voice** from the dropdown (e.g., `nova`, `onyx`, `sage`).  
-5. **Customise the speech settings:**  
+2. **Click "+ Add Integration"** → Select **OpenAI GPT-4o Mini TTS**.  
+3. **Select Provider:** Choose **OpenAI**  
+4. **Enter your OpenAI API Key.**  
+5. **Choose a Voice** from the dropdown (e.g., `nova`, `onyx`, `sage`).
+
+### Azure AI Foundry Setup
+
+1. **Go to:** Settings → Devices & Services → Integrations.  
+2. **Click "+ Add Integration"** → Select **OpenAI GPT-4o Mini TTS**.  
+3. **Select Provider:** Choose **Azure AI Foundry**  
+4. **Enter your Azure API Key.**  
+5. **Enter your Azure Endpoint URL** (example format below)  
+6. **Choose a Voice** from the dropdown (e.g., `nova`, `onyx`, `sage`).
+
+**Azure Endpoint Format:**
+```
+https://{resource-name}.cognitiveservices.azure.com/openai/deployments/{deployment-name}/audio/speech?api-version=2025-03-01-preview
+```
+
+### Common Configuration Steps
+
+4. **Choose a Voice** from the dropdown (e.g., `nova`, `onyx`, `sage`).
+5. **Customize the speech settings:**
 - **Affect/Personality** (e.g., "A cheerful guide")  
 - **Tone** (e.g., "Friendly, clear, and reassuring")  
 - **Pronunciation** (e.g., "Clear, articulate, and steady")  
@@ -117,14 +145,29 @@ The integration supports the following **10 voices**:  alloy, ash, ballad, coral
 
 
 ### **Is this free to use?**  
-No, **OpenAI’s API is a paid service**. You are charged per character generated. Check OpenAI’s pricing page for more details.  
+No, **OpenAI's API is a paid service**. You are charged per character generated. Check OpenAI's pricing page for more details.  
+
+### **How do I get an Azure API Key and Endpoint?**  
+To use Azure AI Foundry:
+1. Sign up for an Azure account at [https://azure.microsoft.com](https://azure.microsoft.com)
+2. Create an Azure OpenAI resource in Azure Portal
+3. Deploy the `gpt-4o-mini-tts` model in your resource
+4. Get your API key from the "Keys and Endpoint" section
+5. Construct your endpoint URL using the format shown in the Azure setup section above
+
+### **What's the difference between OpenAI and Azure providers?**  
+Both providers use the same GPT-4o Mini TTS model and support the same features (voices, settings, streaming). The main differences are:
+- **OpenAI**: Direct access to OpenAI's public API, simpler setup
+- **Azure**: Enterprise-grade security, compliance, and integration with Azure services
 
 ---
 
-## 🔄 Recent Updates  
+## 🔄 Recent Updates
 
-Streaming mode enabled for immediate playback  
----  
+**Dual Provider Support** - Added support for Azure AI Foundry alongside OpenAI  
+Streaming mode enabled for immediate playback
+
+---
 
 ## 🤝 Contributing  
 
@@ -142,7 +185,4 @@ Have questions or need help?
 - **GitHub Issues:** Report problems [here](https://github.com/wifiuk/OpenAI-GPT-4o-Mini-TTS-Home-Assistant-Integration/issues)  
 - **Home Assistant Forums:** Share feedback [here](https://community.home-assistant.io)  
 
-Enjoy **human-like, expressive TTS** in Home Assistant! 🎤🔊  
-
-
-
+Enjoy **human-like, expressive TTS** in Home Assistant! 🎤🔊

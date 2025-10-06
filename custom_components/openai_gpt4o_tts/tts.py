@@ -17,6 +17,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     DOMAIN,
+    CONF_PROVIDER,
+    PROVIDER_AZURE,
+    DEFAULT_PROVIDER,
     OPENAI_TTS_VOICES,
     SUPPORTED_LANGUAGES,
     DEFAULT_LANGUAGE,
@@ -45,7 +48,8 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
     def __init__(self, config_entry: ConfigEntry, client: GPT4oClient) -> None:
         self._config_entry = config_entry
         self._client = client
-        self._name = "OpenAI GPT‑4o Mini TTS"
+        provider = config_entry.data.get(CONF_PROVIDER, DEFAULT_PROVIDER)
+        self._name = "Azure OpenAI GPT-4o Mini TTS" if provider == PROVIDER_AZURE else "OpenAI GPT-4o Mini TTS"
         self._attr_unique_id = f"{config_entry.entry_id}-tts"
 
     @property
@@ -122,4 +126,3 @@ class OpenAIGPT4oTTSProvider(TextToSpeechEntity):
     def extra_state_attributes(self) -> dict:
         """Optional: expose provider name or debug info."""
         return {"provider": self._name}
-
