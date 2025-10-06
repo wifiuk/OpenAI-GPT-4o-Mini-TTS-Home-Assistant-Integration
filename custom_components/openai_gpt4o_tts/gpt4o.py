@@ -1,12 +1,18 @@
 """Client for OpenAI GPT-4o Mini TTS."""
 
 import asyncio
+import audioop
 import base64
 import binascii
+import contextlib
+import io
 import json
 import logging
+import math
 import re
+import wave
 from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
+from typing import Optional
 
 from .const import (
     CONF_PROVIDER,
@@ -25,6 +31,10 @@ from .const import (
     DEFAULT_MODEL,
     DEFAULT_AUDIO_OUTPUT,
     DEFAULT_STREAM_FORMAT,
+    CONF_VOLUME_GAIN,
+    DEFAULT_VOLUME_GAIN,
+    VOLUME_GAIN_MIN,
+    VOLUME_GAIN_MAX,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,6 +49,11 @@ OPENAI_TTS_ENDPOINT = "https://api.openai.com/v1/audio/speech"
 # prefixes like ``sk-proj-`` or ``sk-svcacct-`` so we allow hyphens in the
 # character set and require a reasonable length to avoid false positives.
 _API_KEY_RE = re.compile(r"sk-[A-Za-z0-9-]{16,}")
+
+try:  # pragma: no cover - optional dependency
+    from pydub import AudioSegment
+except ImportError:  # pragma: no cover - optional dependency
+    AudioSegment = None
 
 
 def _mask_api_keys(text: str) -> str:
@@ -90,6 +105,10 @@ class GPT4oClient:
         self._stream_format = opts.get(
             CONF_STREAM_FORMAT, entry.data.get(CONF_STREAM_FORMAT, DEFAULT_STREAM_FORMAT)
         )
+        raw_gain = opts.get(
+            CONF_VOLUME_GAIN, entry.data.get(CONF_VOLUME_GAIN, DEFAULT_VOLUME_GAIN)
+        )
+        self._volume_gain = self._sanitize_volume_gain(raw_gain, log_on_change=False)
 
     def _get_endpoint(self) -> str:
         """Return the appropriate API endpoint based on provider."""
@@ -157,6 +176,111 @@ class GPT4oClient:
         """Return the default audio output format."""
         return self._audio_output
 
+    @property
+    def volume_gain(self) -> float:
+        """Return the configured default volume gain multiplier."""
+        return self._volume_gain
+
+    def _sanitize_volume_gain(self, value: Optional[float], *, log_on_change: bool = True) -> float:
+        """Normalize a user-provided gain into the supported safe range."""
+        try:
+            gain = float(value)
+        except (TypeError, ValueError):
+            if log_on_change:
+                _LOGGER.warning(
+                    "Invalid volume gain %s; using %.2f", value, DEFAULT_VOLUME_GAIN
+                )
+            return DEFAULT_VOLUME_GAIN
+
+        if not math.isfinite(gain):
+            if log_on_change:
+                _LOGGER.warning(
+                    "Non-finite volume gain %s; using %.2f", value, DEFAULT_VOLUME_GAIN
+                )
+            return DEFAULT_VOLUME_GAIN
+
+        clamped = max(VOLUME_GAIN_MIN, min(gain, VOLUME_GAIN_MAX))
+        if log_on_change and not math.isclose(clamped, gain, rel_tol=1e-3, abs_tol=1e-3):
+            _LOGGER.warning(
+                "Volume gain %.2f adjusted into safe range %.1f–%.1f", gain, VOLUME_GAIN_MIN, VOLUME_GAIN_MAX
+            )
+        return clamped
+
+    def _resolve_volume_gain(self, options: Optional[dict]) -> float:
+        """Return gain override if provided, otherwise default."""
+        if options and CONF_VOLUME_GAIN in options:
+            return self._sanitize_volume_gain(options.get(CONF_VOLUME_GAIN))
+        return self._volume_gain
+
+    def _scale_pcm_frames(self, frames: bytes, sample_width: int, gain: float) -> Optional[bytes]:
+        """Apply gain to PCM frames with saturation handling."""
+        if sample_width not in (1, 2, 3, 4):
+            _LOGGER.warning("Unsupported PCM sample width %s; skipping gain", sample_width)
+            return None
+        try:
+            return audioop.mul(frames, sample_width, gain)
+        except Exception as err:  # pragma: no cover - defensive
+            _LOGGER.warning("Failed to scale PCM audio safely: %s", err)
+            return None
+
+    def _apply_volume_gain(self, audio_format: str, audio_bytes: bytes, gain: float) -> bytes:
+        """Scale audio bytes according to ``gain`` while respecting safe bounds."""
+        if not audio_bytes:
+            return audio_bytes
+
+        safe_gain = self._sanitize_volume_gain(gain)
+        if math.isclose(safe_gain, 1.0, rel_tol=1e-3, abs_tol=1e-3):
+            return audio_bytes
+
+        fmt = (audio_format or "").lower()
+
+        if fmt in {"wav", "wave"}:
+            try:
+                with contextlib.closing(wave.open(io.BytesIO(audio_bytes), "rb")) as wav_in:
+                    params = wav_in.getparams()
+                    frames = wav_in.readframes(params.nframes)
+            except (wave.Error, EOFError, OSError) as err:
+                _LOGGER.warning("Unable to read WAV audio for gain adjustment: %s", err)
+                return audio_bytes
+            scaled = self._scale_pcm_frames(frames, params.sampwidth, safe_gain)
+            if scaled is None:
+                return audio_bytes
+            out_buf = io.BytesIO()
+            with contextlib.closing(wave.open(out_buf, "wb")) as wav_out:
+                wav_out.setparams(params)
+                wav_out.writeframes(scaled)
+            return out_buf.getvalue()
+
+        if fmt == "pcm":
+            scaled = self._scale_pcm_frames(audio_bytes, 2, safe_gain)
+            if scaled is None:
+                _LOGGER.warning(
+                    "PCM gain adjustment skipped; ensure 16-bit PCM when requesting scaling"
+                )
+                return audio_bytes
+            return scaled
+
+        if AudioSegment is not None and fmt:
+            try:
+                segment = AudioSegment.from_file(io.BytesIO(audio_bytes), format=fmt)
+                delta_db = 20 * math.log10(safe_gain)
+                boosted = segment.apply_gain(delta_db)
+                export_buf = io.BytesIO()
+                boosted.export(export_buf, format=fmt)
+                return export_buf.getvalue()
+            except Exception as err:  # pragma: no cover - codec/ffmpeg issues
+                _LOGGER.warning(
+                    "Unable to apply volume gain to %s audio: %s", fmt, err
+                )
+                return audio_bytes
+
+        if fmt not in {"", "wav", "wave", "pcm"} and AudioSegment is None:
+            _LOGGER.warning(
+                "Install pydub and FFmpeg to enable safe volume scaling for %s audio", fmt
+            )
+
+        return audio_bytes
+
     async def iter_tts_audio(self, text: str, options: dict | None = None):
         """Asynchronously yield audio chunks from the API."""
         if options is None:
@@ -200,12 +324,17 @@ class GPT4oClient:
 
     async def get_tts_audio(self, text: str, options: dict | None = None):
         """Generate TTS audio from GPT-4o using direct HTTP calls."""
+        if options is None:
+            options = {}
+
         try:
             audio_chunks = [chunk async for chunk in self.iter_tts_audio(text, options)]
             if not audio_chunks:
                 return None, None
-            audio_format = options.get("audio_output", self._audio_output) if options else self._audio_output
-            return audio_format, b"".join(audio_chunks)
+            audio_format = options.get("audio_output", self._audio_output)
+            gain = self._resolve_volume_gain(options)
+            audio_bytes = b"".join(audio_chunks)
+            return audio_format, self._apply_volume_gain(audio_format, audio_bytes, gain)
         except asyncio.TimeoutError:
             _LOGGER.error(
                 "GPT-4o TTS request timed out after %s seconds", REQUEST_TIMEOUT

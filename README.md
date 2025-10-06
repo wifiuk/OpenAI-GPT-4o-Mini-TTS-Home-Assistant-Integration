@@ -102,10 +102,11 @@ https://{resource-name}.cognitiveservices.azure.com/openai/deployments/{deployme
 - **Pauses** (e.g., "Brief, purposeful pauses after key instructions")
 - **Emotion** (e.g., "Warm and supportive")
 - **Playback Speed** (e.g., `1.2` for 20% faster)
+- **Volume Gain** (0.1–3.0, default `1.0`) boosts or reduces loudness without clipping
 - **Model** (e.g., `gpt-4o-mini-tts`)
 - **Audio Format** (e.g., `mp3`, `wav`)
 - **Stream Format** – choose `sse` to stream audio while it is generated or `audio` to wait for the full file
-6. Click **Submit**. 🎉 Done!  
+6. Click **Submit**. 🎉 Done!
 
 
 <img width="334" height="1045" alt="image" src="https://github.com/user-attachments/assets/fb6f147e-b016-4766-bcb9-f1ddeec87ffa" />
@@ -144,6 +145,10 @@ You need an API key from OpenAI to use this integration. Get one from:
 The integration supports the following **10 voices**:  alloy, ash, ballad, coral, echo, fable, onyx, nova, sage, shimmer
 
 
+### **Can I make the audio louder or softer?**
+Yes. Set **Volume Gain** between **0.1** and **3.0** in the integration options or per service call. Values outside that range are clamped to prevent ear-damaging spikes or digital clipping. For compressed formats (MP3/AAC/Opus), install [`pydub`](https://github.com/jiaaro/pydub) and FFmpeg so the integration can adjust gain safely; WAV/PCM files are handled natively.
+
+
 ### **Is this free to use?**  
 No, **OpenAI's API is a paid service**. You are charged per character generated. Check OpenAI's pricing page for more details.  
 
@@ -164,8 +169,13 @@ Both providers use the same GPT-4o Mini TTS model and support the same features 
 
 ## 🔄 Recent Updates
 
-**Dual Provider Support** - Added support for Azure AI Foundry alongside OpenAI  
+**Dual Provider Support** - Added support for Azure AI Foundry alongside OpenAI
 Streaming mode enabled for immediate playback
+
+### Developer Notes
+
+- **Run tests:** `pytest`
+- **Optional deps for audio scaling:** `pip install pydub` and ensure FFmpeg is on your PATH for compressed audio gain control.
 
 ---
 
