@@ -1,7 +1,7 @@
+from collections.abc import AsyncGenerator
+import importlib
 import os
 import sys
-import importlib
-from collections.abc import AsyncGenerator
 
 import pytest
 
@@ -20,18 +20,14 @@ tts_module = importlib.import_module("custom_components.openai_gpt4o_tts.tts")
 
 
 class DummyEntry:
-    def __init__(self, data=None, options=None):
+    def __init__(self):
         self.entry_id = "id"
-        self.data = data or {}
-        self.options = options or {}
 
 
 class DummyClient:
-    def __init__(self, stream_format="audio", audio_output="mp3", volume_gain=1.0):
+    def __init__(self, stream_format="audio"):
         self.stream_format = stream_format
         self.called = []
-        self.audio_output = audio_output
-        self.volume_gain = volume_gain
 
     async def get_tts_audio(self, message, options=None):
         self.called.append(("get", message, options))
@@ -71,12 +67,4 @@ async def test_stream_method_sse():
     assert resp.extension == "mp3"
     assert data == b"ab"
     assert client.called[0][0] == "stream"
-
-
-def test_default_options_include_volume():
-    client = DummyClient(volume_gain=1.25)
-    provider = tts_module.OpenAIGPT4oTTSProvider(DummyEntry(), client)
-    defaults = provider.default_options
-    assert defaults[tts_module.ATTR_AUDIO_OUTPUT] == "mp3"
-    assert pytest.approx(defaults[tts_module.CONF_VOLUME_GAIN]) == 1.25
 

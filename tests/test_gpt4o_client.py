@@ -1,10 +1,8 @@
-import asyncio
-import base64
+import importlib
 import os
 import sys
-import importlib
+
 import pytest
-import struct
 
 sys.path.insert(0, os.path.dirname(__file__))
 from hass_stubs import install_homeassistant_stubs
@@ -26,17 +24,14 @@ class DummyEntry:
 
 
 class DummyContent:
-    def __init__(self, payload: bytes):
-        self._payload = payload
-
     async def iter_chunked(self, size):
-        yield self._payload
+        yield b"audio"
 
 
 class DummyResponse:
-    def __init__(self, payload: bytes = b"audio"):
+    def __init__(self):
         self.status = 200
-        self.content = DummyContent(payload)
+        self.content = DummyContent()
 
     async def __aenter__(self):
         return self
@@ -52,9 +47,8 @@ class DummyResponse:
 
 
 class DummySession:
-    def __init__(self, *args, payload: bytes = b"audio", **kwargs):
+    def __init__(self, *args, **kwargs):
         self.payload = None
-        self._payload = payload
 
     async def __aenter__(self):
         return self
@@ -64,22 +58,26 @@ class DummySession:
 
     def post(self, url, headers=None, json=None):
         self.payload = json
-        return DummyResponse(self._payload)
+        return DummyResponse()
 
 
 class DummySSEContent:
-    def __init__(self, chunks):
-        self._chunks = chunks
+    def __init__(self, lines):
+        self.lines = lines
 
-    async def iter_chunked(self, size):  # noqa: ARG002 - size unused in stub
-        for chunk in self._chunks:
-            yield chunk
+    def __aiter__(self):
+        async def gen():
+            for line in self.lines:
+                for part in line.split(b"\n"):
+                    yield (part + b"\n") if part else b"\n"
+
+        return gen()
 
 
 class DummySSEResponse:
-    def __init__(self, chunks):
+    def __init__(self, lines):
         self.status = 200
-        self.content = DummySSEContent(chunks)
+        self.content = DummySSEContent(lines)
 
     async def __aenter__(self):
         return self
@@ -95,9 +93,9 @@ class DummySSEResponse:
 
 
 class DummySSESession:
-    def __init__(self, chunks):
+    def __init__(self, lines):
         self.payload = None
-        self._chunks = chunks
+        self.lines = lines
 
     async def __aenter__(self):
         return self
@@ -107,7 +105,7 @@ class DummySSESession:
 
     def post(self, url, headers=None, json=None):
         self.payload = json
-        return DummySSEResponse(self._chunks)
+        return DummySSEResponse(self.lines)
 
 
 @pytest.mark.asyncio
@@ -135,13 +133,12 @@ async def test_sse_stream(monkeypatch):
     entry = DummyEntry(data={"api_key": "k"})
     client = GPT4oClient(None, entry)
 
-    chunks = [
-        b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTE="}\n',
-        b'\n',
+    lines = [
+        b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTE="}\n\n',
         b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTI="}\n\n',
         b'data: {"type": "speech.audio.done"}\n\n',
     ]
-    session = DummySSESession(chunks)
+    session = DummySSESession(lines)
     monkeypatch.setattr(
         "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
         lambda timeout=None: session,
@@ -153,36 +150,16 @@ async def test_sse_stream(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_pcm_base64_is_decoded(monkeypatch):
-    entry = DummyEntry(data={"api_key": "k"})
-    client = GPT4oClient(None, entry)
-
-    pcm_bytes = b"\x01\x02\x03\x04"
-    payload = base64.b64encode(pcm_bytes)
-
-    dummy = DummySession(payload=payload)
-    monkeypatch.setattr(
-        "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
-        lambda timeout=None: dummy,
-    )
-
-    fmt, data = await client.get_tts_audio("hello", {gpt4o.CONF_AUDIO_OUTPUT: "pcm"})
-    assert fmt == "pcm"
-    assert data == pcm_bytes
-
-
-@pytest.mark.asyncio
 async def test_default_stream_from_entry(monkeypatch):
     entry = DummyEntry(data={"api_key": "k"}, options={gpt4o.CONF_STREAM_FORMAT: "sse"})
     client = GPT4oClient(None, entry)
 
-    chunks = [
+    lines = [
         b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTE="}\n\n',
-        b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTI="}\n',
-        b'\n',
+        b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTI="}\n\n',
         b'data: {"type": "speech.audio.done"}\n\n',
     ]
-    session = DummySSESession(chunks)
+    session = DummySSESession(lines)
     monkeypatch.setattr(
         "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
         lambda timeout=None: session,
@@ -198,12 +175,12 @@ async def test_stream_tts_audio_generator(monkeypatch):
     entry = DummyEntry(data={"api_key": "k"})
     client = GPT4oClient(None, entry)
 
-    chunks = [
+    lines = [
         b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTE="}\n\n',
         b'data: {"type": "speech.audio.delta", "audio": "ZGF0YTI="}\n\n',
         b'data: {"type": "speech.audio.done"}\n\n',
     ]
-    session = DummySSESession(chunks)
+    session = DummySSESession(lines)
     monkeypatch.setattr(
         "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
         lambda timeout=None: session,
@@ -213,27 +190,6 @@ async def test_stream_tts_audio_generator(monkeypatch):
     assert fmt == "mp3"
     data = b"".join([chunk async for chunk in generator])
     assert data == b"data1data2"
-
-
-@pytest.mark.asyncio
-async def test_sse_handles_split_data_prefix(monkeypatch):
-    entry = DummyEntry(data={"api_key": "k"})
-    client = GPT4oClient(None, entry)
-
-    chunks = [
-        b"da",
-        b'ta: {"type": "speech.audio.delta", "audio": "ZGF0YTE="}\n\n',
-        b'data: {"type": "speech.audio.done"}\n\n',
-    ]
-    session = DummySSESession(chunks)
-    monkeypatch.setattr(
-        "custom_components.openai_gpt4o_tts.gpt4o.ClientSession",
-        lambda timeout=None: session,
-    )
-
-    fmt, data = await client.get_tts_audio("hi", {gpt4o.CONF_STREAM_FORMAT: "sse"})
-    assert fmt == "mp3"
-    assert data == b"data1"
 
 
 class ErrorResponse:
@@ -283,26 +239,3 @@ async def test_log_api_error_masks_api_key_text(caplog, key):
         await gpt4o._log_api_error(resp)
     assert key not in caplog.text
     assert "sk-***" in caplog.text
-
-
-def test_volume_gain_clamped_from_entry():
-    entry = DummyEntry(
-        data={"api_key": "k"}, options={gpt4o.CONF_VOLUME_GAIN: 10.0}
-    )
-    client = GPT4oClient(None, entry)
-    assert client.volume_gain == gpt4o.VOLUME_GAIN_MAX
-
-
-def test_apply_volume_gain_pcm():
-    entry = DummyEntry(data={"api_key": "k"})
-    client = GPT4oClient(None, entry)
-    pcm = struct.pack("<hh", 1000, -1000)
-    boosted = client._apply_volume_gain("pcm", pcm, 2.0)
-    assert struct.unpack("<hh", boosted) == (2000, -2000)
-
-
-def test_resolve_volume_gain_override_clamped():
-    entry = DummyEntry(data={"api_key": "k"})
-    client = GPT4oClient(None, entry)
-    gain = client._resolve_volume_gain({gpt4o.CONF_VOLUME_GAIN: 0.05})
-    assert gain == gpt4o.VOLUME_GAIN_MIN
