@@ -1,11 +1,12 @@
 # Security Notes
 
-- **Secrets & API keys**: Store API keys in Home Assistant's secure storage. They are never logged in plaintext; the integration masks tokens before logging (OWASP A3:2021 Sensitive Data Exposure).
-- **Transport security**: Only HTTPS endpoints are accepted for Azure. OpenAI requests use HTTPS with bearer/API-key headers to protect data in transit (OWASP A2:2021 Cryptographic Failures).
-- **Input validation**: Configuration forms validate audio options, stream formats, and the new volume gain multiplier which is clamped to the 0.1–3.0 safe range to avoid clipping or harmful playback levels (OWASP A4:2021 Insecure Design).
-- **Output handling**: Audio scaling operates on in-memory buffers; no shelling out. When optional `pydub` is installed, ensure FFmpeg binaries are trusted and kept patched to avoid introducing vulnerable codecs (OWASP A6:2021 Vulnerable and Outdated Components).
-- **Abuse mitigation**: Requests inherit Home Assistant's network timeouts and the integration enforces a 30s API timeout to reduce DoS risk (OWASP A5:2021 Security Misconfiguration).
+- **Secrets**: API keys are stored by Home Assistant's secret storage. The integration masks tokens in logs to limit exposure (OWASP A3:2021 Sensitive Data Exposure).
+- **Transport**: Only HTTPS endpoints are accepted. Client requests enforce a 30s timeout and never shell out, reducing injection and SSRF risk (OWASP A5:2021 Security Misconfiguration, A10:2021 Server-Side Request Forgery).
+- **Input validation**: Configuration schemas restrict provider, voice, model, audio format, playback speed, and volume gain. Gain is clamped to `0.1–3.0` at runtime to avoid clipping or harmful playback (OWASP A4:2021 Insecure Design).
+- **Output handling**: Audio returned from providers is normalised to binary and sanitized before being passed to ffmpeg, preventing malformed base64 payloads from propagating downstream (OWASP A1:2021 Broken Access Control via injection vectors).
+- **Dependencies**: Optional FFmpeg/pydub components must be maintained by the operator to avoid vulnerable codecs (OWASP A6:2021 Vulnerable and Outdated Components).
 
-## Assumptions
-- Home Assistant manages API credentials securely and provides rate limiting and authentication for exposed endpoints.
-- Users deploying FFmpeg for compressed audio scaling maintain the binary and codecs with security updates.
+## Assumptions & Risks
+- Home Assistant provides authentication, rate limiting, and protects the `/api/tts_proxy` endpoint from abuse.
+- API credentials are provisioned with the minimum scope required and rotated by the operator.
+- Outbound connectivity to OpenAI/Azure is available; transient failures result in log warnings and no cached audio.
