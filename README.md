@@ -22,7 +22,7 @@ Home Assistant custom integration that exposes OpenAI's GPT-4o Mini text-to-spee
 2. Select **OpenAI GPT-4o Mini TTS**.
 3. Provide the OpenAI API key when prompted.
 4. Optional tweaks (validated by the UI schema):
-   - Voice: one of `alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `onyx`, `nova`, `sage`, `shimmer`.
+   - Voice: one of `alloy`, `ash`, `ballad`, `cedar`, `coral`, `echo`, `fable`, `marin`, `onyx`, `nova`, `sage`, `shimmer`, `verse`.
    - Playback speed between `0.25` and `4.0`.
    - Audio output format (default `mp3`) and stream format (`audio` for full responses, `sse` for chunked streaming).
    - Multi-field instructions (affect, tone, pronunciation, pause, emotion) that are combined into the `instructions` payload.
