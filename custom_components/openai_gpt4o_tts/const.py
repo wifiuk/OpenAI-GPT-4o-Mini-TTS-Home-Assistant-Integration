@@ -38,13 +38,16 @@ OPENAI_TTS_VOICES = [
     "alloy",
     "ash",
     "ballad",
+    "cedar",
     "coral",
     "echo",
     "fable",
+    "marin",
     "onyx",
     "nova",
     "sage",
     "shimmer",
+    "verse",
 ]
 
 # Supported models and formats

@@ -24,7 +24,7 @@ With **10 built-in voices**, you can customise **how speech is rendered** to mat
 
 ✅ **Uses GPT-4o Mini TTS**, OpenAI’s latest speech model  
 ✅ **Fully UI-based setup**—no YAML required  
-✅ **10 voices** (`alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `onyx`, `nova`, `sage`, `shimmer`)  
+✅ **13 voices** (`alloy`, `ash`, `ballad`, `cedar`, `coral`, `echo`, `fable`, `marin`, `onyx`, `nova`, `sage`, `shimmer`, `verse`)  
 ✅ **Customisable speech**—affect, tone, pronunciation, pauses, emotion  
 ✅ **Works with Home Assistant’s Assist**  
 ✅ **Easily installable via HACS**  
